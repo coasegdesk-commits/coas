@@ -304,6 +304,223 @@ function AutoWrapCell({
   );
 }
 
+// ============================================================================
+// Custom Order Templates System (Up to 20 saved forms)
+// Supports:
+// 1. Horizontal scrollable mini visual thumbnail cards
+// 2. 5-items visible pulldown dropdown menu with scrollable 20 slots
+// 3. One-click instant layout & memo application
+// ============================================================================
+
+export interface CustomOrderTemplate {
+  id: string;
+  name: string;
+  createdAt: string;
+  orientation: "portrait" | "landscape";
+  rowCount: number;
+  rowHeightPx: number;
+  colWidths: number[];
+  zoomPct: number;
+  memoTemplate?: string;
+  isDefault?: boolean;
+}
+
+const TEMPLATES_STORAGE_KEY = "coas_order_custom_templates_v2";
+const ACTIVE_TEMPLATE_ID_KEY = "coas_order_active_template_id_v2";
+export const MAX_CUSTOM_TEMPLATES = 20;
+
+export const DEFAULT_BUILTIN_TEMPLATES: CustomOrderTemplate[] = [
+  {
+    id: "builtin_standard_20",
+    name: "표준 20행 기본형",
+    createdAt: "기본 양식",
+    orientation: "portrait",
+    rowCount: 20,
+    rowHeightPx: 32,
+    colWidths: [38, 118, 140, 78, 48, 54, 180, 24],
+    zoomPct: 100,
+    isDefault: true,
+  },
+  {
+    id: "builtin_memo_10",
+    name: "10행 메모확대형",
+    createdAt: "기본 양식",
+    orientation: "portrait",
+    rowCount: 10,
+    rowHeightPx: 32,
+    colWidths: [38, 118, 140, 78, 48, 54, 180, 24],
+    zoomPct: 100,
+    memoTemplate:
+      "※ 11/15 오전 화물 발송 후 송장번호 문자 부탁드립니다. / 현장 하차지 연락처 별도 기재 / 도면·엑셀 파일은 우측 견출 탭에서 첨부",
+  },
+  {
+    id: "builtin_landscape_15",
+    name: "가로 15행 와이드형",
+    createdAt: "기본 양식",
+    orientation: "landscape",
+    rowCount: 15,
+    rowHeightPx: 28,
+    colWidths: [44, 180, 260, 110, 60, 70, 250, 28],
+    zoomPct: 100,
+  },
+];
+
+function loadCustomTemplates(): CustomOrderTemplate[] {
+  if (typeof window === "undefined") return DEFAULT_BUILTIN_TEMPLATES;
+  try {
+    const raw = localStorage.getItem(TEMPLATES_STORAGE_KEY);
+    if (!raw) return DEFAULT_BUILTIN_TEMPLATES;
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed;
+    }
+  } catch {}
+  return DEFAULT_BUILTIN_TEMPLATES;
+}
+
+function saveCustomTemplates(templates: CustomOrderTemplate[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(templates));
+  } catch {}
+}
+
+/**
+ * Miniature Visual A4 Paper Card for Horizontal Scroll Gallery
+ */
+function OrderMiniThumbnailCard({
+  template,
+  isActive,
+  onApply,
+  onDelete,
+  onSetDefault,
+}: {
+  template: CustomOrderTemplate;
+  isActive: boolean;
+  onApply: (t: CustomOrderTemplate) => void;
+  onDelete?: (id: string, e: React.MouseEvent) => void;
+  onSetDefault?: (id: string, e: React.MouseEvent) => void;
+}) {
+  const isLandscape = template.orientation === "landscape";
+  const isMemoFocus = template.rowCount <= 12;
+
+  return (
+    <div
+      onClick={() => onApply(template)}
+      className={`group relative shrink-0 w-[112px] p-2 rounded-lg border text-left cursor-pointer transition-all flex flex-col justify-between select-none ${
+        isActive
+          ? "bg-orange-50/90 border-[#FF7B00] ring-2 ring-[#FF7B00]/40 shadow-sm"
+          : "bg-white border-slate-200 hover:border-orange-400 hover:bg-slate-50 hover:shadow-xs"
+      }`}
+      title={`${template.name} (${isLandscape ? "A4 가로" : "A4 세로"} · ${template.rowCount}행 · 행높이 ${template.rowHeightPx}px) 클릭 시 즉시 적용`}
+    >
+      {/* Top badges */}
+      <div className="flex items-center justify-between w-full mb-1">
+        <span
+          className={`text-[9.5px] font-black px-1.5 py-0.5 rounded leading-none ${
+            isLandscape
+              ? "bg-sky-100 text-sky-800"
+              : isMemoFocus
+                ? "bg-amber-100 text-amber-900 font-extrabold"
+                : "bg-slate-100 text-slate-700"
+          }`}
+        >
+          {isLandscape ? "가로" : "세로"} {template.rowCount}행
+        </span>
+        {template.isDefault && (
+          <span
+            className="text-[9px] text-[#FF7B00] font-black shrink-0 flex items-center gap-0.5"
+            title="기본 양식으로 지정됨"
+          >
+            <Star className="w-2.5 h-2.5 fill-[#FF7B00]" />
+            기본
+          </span>
+        )}
+      </div>
+
+      {/* Miniature Visual A4 Paper Representation */}
+      <div className="w-full flex items-center justify-center my-1">
+        <div
+          className={`bg-white border border-slate-400 rounded-[2px] shadow-[0_1px_3px_rgba(0,0,0,0.15)] relative overflow-hidden flex flex-col justify-between transition-transform group-hover:scale-105 ${
+            isLandscape ? "w-[56px] h-[38px]" : "w-[38px] h-[54px]"
+          }`}
+        >
+          {/* Header strip */}
+          <div className="w-full h-[3px] bg-slate-700 shrink-0" />
+
+          {/* Subheader info block */}
+          <div className="w-full px-0.5 pt-0.5 flex flex-col gap-[1px]">
+            <div className="w-2/3 h-[1px] bg-slate-300" />
+            <div className="w-full h-[1px] bg-slate-200" />
+          </div>
+
+          {/* Table Lines representation */}
+          <div
+            className={`w-full px-0.5 flex flex-col gap-[1.5px] ${
+              isMemoFocus ? "flex-none h-[40%]" : "flex-1"
+            } justify-around py-0.5`}
+          >
+            {Array.from({ length: isMemoFocus ? 4 : isLandscape ? 5 : 7 }).map(
+              (_, i) => (
+                <div
+                  key={i}
+                  className={`w-full h-[1px] ${
+                    i === 0 ? "bg-slate-400" : "bg-slate-200"
+                  }`}
+                />
+              ),
+            )}
+          </div>
+
+          {/* Memo Area Representation: Highlighted in amber when rowCount is small (expanded memo) */}
+          <div
+            className={`w-full border-t flex flex-col justify-center px-0.5 shrink-0 ${
+              isMemoFocus
+                ? "h-[46%] bg-amber-100/90 border-amber-400 text-amber-800"
+                : "h-[20%] bg-slate-100 border-slate-300 text-slate-500"
+            }`}
+          >
+            <div
+              className={`w-full h-[1.5px] rounded-full ${
+                isMemoFocus ? "bg-amber-400" : "bg-slate-300"
+              }`}
+            />
+            {isMemoFocus && (
+              <div className="text-[6.5px] font-black leading-none text-center text-amber-700 mt-[1px] tracking-tighter">
+                메모확대
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Template Name & Action indicator */}
+      <div className="w-full mt-1">
+        <div
+          className="text-[11px] font-extrabold text-slate-800 truncate"
+          title={template.name}
+        >
+          {template.name}
+        </div>
+        <div className="flex items-center justify-between text-[9px] text-slate-500 mt-0.5">
+          <span className="text-slate-400 truncate">
+            {template.rowHeightPx}px
+          </span>
+          {isActive ? (
+            <span className="text-[#FF7B00] font-black flex items-center gap-0.5">
+              <Check className="w-2.5 h-2.5 stroke-[3]" /> 적용중
+            </span>
+          ) : (
+            <span className="text-sky-600 font-bold group-hover:underline">
+              적용
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function OrderPage() {
   const { toast } = useToast();
   const { cms } = useCmsBootstrap();
@@ -572,6 +789,25 @@ export default function OrderPage() {
   const layoutPopoverRef = useRef<HTMLDivElement | null>(null);
   const layoutTriggerRef = useRef<HTMLButtonElement | null>(null);
 
+  // Saved Custom Order Templates (up to 20) & Active Selection
+  const [customTemplates, setCustomTemplates] = useState<CustomOrderTemplate[]>(
+    () => loadCustomTemplates(),
+  );
+  const [activeTemplateId, setActiveTemplateId] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const savedId = localStorage.getItem(ACTIVE_TEMPLATE_ID_KEY);
+      if (savedId) return savedId;
+    }
+    return "builtin_standard_20";
+  });
+  const [templateDropdownOpen, setTemplateDropdownOpen] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState("");
+  const [includeMemoInTemplate, setIncludeMemoInTemplate] = useState(false);
+  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+  const templateDropdownRef = useRef<HTMLDivElement | null>(null);
+  const templateTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const miniCarouselRef = useRef<HTMLDivElement | null>(null);
+
   // Saved Buyer Profiles & Quick Company Entry State
   const [buyerProfiles, setBuyerProfiles] = useState<SavedBuyerProfile[]>(() =>
     loadBuyerProfiles(),
@@ -783,6 +1019,33 @@ export default function OrderPage() {
     };
   }, [layoutPopoverOpen]);
 
+  useEffect(() => {
+    if (!templateDropdownOpen) return;
+    const onMouseDown = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        templateDropdownRef.current?.contains(target) ||
+        templateTriggerRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setTemplateDropdownOpen(false);
+      setIsSavingTemplate(false);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setTemplateDropdownOpen(false);
+        setIsSavingTemplate(false);
+      }
+    };
+    document.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [templateDropdownOpen]);
+
   // Strict A4 Paper Dimensions (@ 96 DPI: 210mm × 297mm = 794px × 1123px)
   const sheetBaseWidth = orientation === "landscape" ? 1123 : 794;
   const sheetBaseHeight = orientation === "landscape" ? 794 : 1123;
@@ -858,6 +1121,122 @@ export default function OrderPage() {
     setRowHeightDraft(String(clamped));
   };
 
+  // Apply saved template to current order form
+  const handleApplyTemplate = (tpl: CustomOrderTemplate) => {
+    setActiveTemplateId(tpl.id);
+    try {
+      localStorage.setItem(ACTIVE_TEMPLATE_ID_KEY, tpl.id);
+    } catch {}
+
+    if (tpl.orientation !== orientation) {
+      setOrientation(tpl.orientation);
+    }
+    setTargetRowCount(tpl.rowCount);
+    setRowHeightPx(tpl.rowHeightPx);
+    setRowHeightDraft(String(tpl.rowHeightPx));
+
+    if (Array.isArray(tpl.colWidths) && tpl.colWidths.length === 8) {
+      setColWidths([...tpl.colWidths]);
+      setColsCustomEdited(true);
+    }
+    if (tpl.zoomPct) {
+      setZoomPct(tpl.zoomPct);
+    }
+    if (tpl.memoTemplate !== undefined && tpl.memoTemplate !== "") {
+      setMemo(tpl.memoTemplate);
+    }
+
+    toast({
+      title: `[${tpl.name}] 양식이 적용되었습니다.`,
+      description: `${tpl.orientation === "landscape" ? "A4 가로" : "A4 세로"} · ${tpl.rowCount}행 · 행 높이 ${tpl.rowHeightPx}px`,
+    });
+  };
+
+  // Save current order setup as a new custom template (up to 20)
+  const handleSaveCurrentAsTemplate = () => {
+    const trimmedName = newTemplateName.trim();
+    const finalName =
+      trimmedName ||
+      `내 양식 (${orientation === "landscape" ? "가로" : "세로"} ${items.length}행)`;
+
+    if (customTemplates.length >= MAX_CUSTOM_TEMPLATES) {
+      toast({
+        title: "양식은 최대 20개까지만 저장할 수 있습니다.",
+        description: "기존에 저장된 양식 중 불필요한 것을 삭제 후 다시 시도해 주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newTpl: CustomOrderTemplate = {
+      id: `tpl_${Date.now()}`,
+      name: finalName,
+      createdAt: new Date().toLocaleDateString("ko-KR", {
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      orientation,
+      rowCount: items.length,
+      rowHeightPx,
+      colWidths: [...colWidths],
+      zoomPct,
+      memoTemplate: includeMemoInTemplate ? memo : undefined,
+    };
+
+    const nextList = [newTpl, ...customTemplates].slice(0, MAX_CUSTOM_TEMPLATES);
+    setCustomTemplates(nextList);
+    saveCustomTemplates(nextList);
+    setActiveTemplateId(newTpl.id);
+    try {
+      localStorage.setItem(ACTIVE_TEMPLATE_ID_KEY, newTpl.id);
+    } catch {}
+
+    setNewTemplateName("");
+    setIsSavingTemplate(false);
+
+    toast({
+      title: `[${finalName}] 양식이 저장되었습니다. (총 ${nextList.length}/20개)`,
+      description: "풀다운 메뉴 또는 상단 가로 카드에서 언제든 바로 적용할 수 있습니다.",
+    });
+  };
+
+  const handleSetAsDefaultTemplate = (tplId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const nextList = customTemplates.map((t) => ({
+      ...t,
+      isDefault: t.id === tplId,
+    }));
+    setCustomTemplates(nextList);
+    saveCustomTemplates(nextList);
+    const target = nextList.find((t) => t.id === tplId);
+    toast({
+      title: `[${target?.name || "선택한 양식"}]이(가) 기본 양식으로 지정되었습니다.`,
+      description: "앞으로 발주서 작성 시 이 양식이 기본값으로 우선 적용됩니다.",
+    });
+  };
+
+  const handleDeleteTemplate = (tplId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const target = customTemplates.find((t) => t.id === tplId);
+    const nextList = customTemplates.filter((t) => t.id !== tplId);
+    setCustomTemplates(nextList);
+    saveCustomTemplates(nextList);
+    if (activeTemplateId === tplId && nextList.length > 0) {
+      setActiveTemplateId(nextList[0].id);
+    }
+    toast({
+      title: `[${target?.name || "양식"}]을(를) 삭제했습니다. (남은 양식: ${nextList.length}/20개)`,
+    });
+  };
+
+  const handleScrollCarousel = (dir: "left" | "right") => {
+    if (!miniCarouselRef.current) return;
+    const amount = dir === "left" ? -180 : 180;
+    miniCarouselRef.current.scrollBy({ left: amount, behavior: "smooth" });
+  };
+
   const handleSaveDefaultPrefs = () => {
     try {
       localStorage.setItem(
@@ -869,11 +1248,56 @@ export default function OrderPage() {
           colWidths,
         }),
       );
-      toast({
-        title: "내 기본 보기·용지 설정이 저장되었습니다.",
-        description: `배율 ${zoomPct}% · ${orientation === "landscape" ? "A4 가로" : "A4 세로"} · 행 높이 ${rowHeightPx}px`,
-      });
     } catch {}
+
+    // Also sync or create a custom template for user
+    const defaultTplName = `내 기본 설정 (${orientation === "landscape" ? "가로" : "세로"} ${items.length}행)`;
+    const existingDefaultIdx = customTemplates.findIndex((t) => t.isDefault);
+    let nextList: CustomOrderTemplate[];
+
+    const updatedTpl: CustomOrderTemplate = {
+      id:
+        existingDefaultIdx >= 0
+          ? customTemplates[existingDefaultIdx].id
+          : `tpl_default_${Date.now()}`,
+      name:
+        existingDefaultIdx >= 0
+          ? customTemplates[existingDefaultIdx].name
+          : defaultTplName,
+      createdAt: new Date().toLocaleDateString("ko-KR", {
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      orientation,
+      rowCount: items.length,
+      rowHeightPx,
+      colWidths: [...colWidths],
+      zoomPct,
+      memoTemplate: memo || undefined,
+      isDefault: true,
+    };
+
+    if (existingDefaultIdx >= 0) {
+      nextList = customTemplates.map((t, i) =>
+        i === existingDefaultIdx ? updatedTpl : { ...t, isDefault: false },
+      );
+    } else {
+      nextList = [
+        updatedTpl,
+        ...customTemplates.map((t) => ({ ...t, isDefault: false })),
+      ].slice(0, MAX_CUSTOM_TEMPLATES);
+    }
+
+    setCustomTemplates(nextList);
+    saveCustomTemplates(nextList);
+    setActiveTemplateId(updatedTpl.id);
+
+    toast({
+      title: "현재 설정을 내 기본 양식으로 저장했습니다.",
+      description: `총 ${nextList.length}/20개 보관 중 · 상단 '내 양식' 메뉴에서 언제든 바로 확인 가능합니다.`,
+    });
   };
 
   const handleRestoreDefaultPrefs = () => {
@@ -2899,6 +3323,271 @@ export default function OrderPage() {
               />
             </button>
 
+            {/* Custom Order Templates Pulldown Menu (Up to 20 forms, 5-visible list + Horizontal Mini Gallery) */}
+            <div className="relative shrink-0">
+              <button
+                ref={templateTriggerRef}
+                type="button"
+                onClick={() => setTemplateDropdownOpen((o) => !o)}
+                data-testid="button-template-pulldown"
+                className={`px-2.5 py-1 rounded border text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
+                  templateDropdownOpen
+                    ? "border-[#FF7B00] bg-slate-700 text-white"
+                    : "border-orange-500/60 bg-slate-900 hover:bg-slate-700 text-orange-200"
+                }`}
+                title="내가 설정한 양식 불러오기 및 저장 (최대 20개 · 풀다운 5개 보기)"
+              >
+                <FileText className="w-3.5 h-3.5 text-[#FF7B00]" />
+                <span className="truncate max-w-[110px]">
+                  {customTemplates.find((t) => t.id === activeTemplateId)?.name ||
+                    "내 양식"}
+                </span>
+                <span className="text-[9.5px] px-1 py-0.2 rounded bg-orange-950/80 text-orange-300 font-extrabold border border-orange-500/40">
+                  {customTemplates.length}/20
+                </span>
+                <ChevronDown
+                  className={`w-3 h-3 text-slate-400 transition-transform ${
+                    templateDropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {templateDropdownOpen && (
+                <div
+                  ref={templateDropdownRef}
+                  style={{
+                    left: templateTriggerRef.current
+                      ? `${Math.max(12, Math.min(window.innerWidth - 440, templateTriggerRef.current.getBoundingClientRect().left))}px`
+                      : "50%",
+                  }}
+                  className="fixed top-[104px] z-50 w-[420px] max-w-[95vw] p-3.5 bg-white text-slate-900 border border-slate-300 shadow-2xl rounded-lg space-y-3 whitespace-normal"
+                >
+                  {/* Header */}
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                    <div className="flex items-center gap-1.5">
+                      <FileText className="w-4 h-4 text-[#FF7B00]" />
+                      <span className="font-extrabold text-xs text-slate-900">
+                        내가 설정한 양식 보관함
+                      </span>
+                      <span className="text-[10.5px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-800 font-bold">
+                        {customTemplates.length}/20개
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setTemplateDropdownOpen(false)}
+                      className="text-slate-400 hover:text-slate-700 cursor-pointer p-0.5 rounded"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* 1. Horizontal Scroll Mini Thumbnail Cards Gallery */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-slate-600">
+                        미니 이미지 미리보기 (가로 스크롤)
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleScrollCarousel("left")}
+                          className="p-1 rounded border border-slate-200 hover:bg-slate-100 text-slate-600 cursor-pointer"
+                          title="왼쪽으로 스크롤"
+                        >
+                          <ChevronLeft className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleScrollCarousel("right")}
+                          className="p-1 rounded border border-slate-200 hover:bg-slate-100 text-slate-600 cursor-pointer"
+                          title="오른쪽으로 스크롤"
+                        >
+                          <ChevronRight className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                    <div
+                      ref={miniCarouselRef}
+                      className="flex items-stretch gap-2 overflow-x-auto pb-1.5 pt-0.5 scrollbar-thin"
+                    >
+                      {customTemplates.map((tpl) => (
+                        <OrderMiniThumbnailCard
+                          key={tpl.id}
+                          template={tpl}
+                          isActive={tpl.id === activeTemplateId}
+                          onApply={handleApplyTemplate}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 2. 5-Items Visible Pulldown List (Scrollable for up to 20 items) */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-slate-600">
+                        양식 선택 풀다운 (5개 보기 · 스크롤 지원)
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        항목 클릭 시 즉시 적용
+                      </span>
+                    </div>
+                    <div className="max-h-[210px] overflow-y-auto divide-y divide-slate-100 border border-slate-200 rounded-md bg-slate-50/50">
+                      {customTemplates.map((tpl) => {
+                        const isActive = tpl.id === activeTemplateId;
+                        return (
+                          <div
+                            key={tpl.id}
+                            onClick={() => handleApplyTemplate(tpl)}
+                            className={`px-2.5 py-2 flex items-center justify-between gap-2 hover:bg-orange-50/80 cursor-pointer transition-colors ${
+                              isActive ? "bg-orange-50/90 font-bold" : "bg-white"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <span
+                                className={`w-2 h-2 rounded-full shrink-0 ${
+                                  isActive ? "bg-[#FF7B00]" : "bg-slate-300"
+                                }`}
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-bold text-slate-900 truncate">
+                                    {tpl.name}
+                                  </span>
+                                  {tpl.isDefault && (
+                                    <span className="text-[9px] font-black px-1 py-0.2 bg-orange-100 text-[#FF7B00] rounded">
+                                      기본
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[10px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+                                  <span>
+                                    {tpl.orientation === "landscape"
+                                      ? "A4 가로"
+                                      : "A4 세로"}
+                                  </span>
+                                  <span>·</span>
+                                  <span>{tpl.rowCount}행</span>
+                                  <span>·</span>
+                                  <span>{tpl.rowHeightPx}px</span>
+                                  {tpl.memoTemplate && (
+                                    <span className="text-amber-700 font-semibold truncate max-w-[120px]">
+                                      · 메모포함
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div
+                              className="flex items-center gap-1 shrink-0"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => handleApplyTemplate(tpl)}
+                                className={`px-2 py-1 rounded text-[10.5px] font-bold cursor-pointer transition-colors ${
+                                  isActive
+                                    ? "bg-[#FF7B00] text-white"
+                                    : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                                }`}
+                              >
+                                {isActive ? "적용중" : "선택"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) =>
+                                  handleSetAsDefaultTemplate(tpl.id, e)
+                                }
+                                className={`p-1 rounded text-[11px] cursor-pointer hover:bg-slate-100 ${
+                                  tpl.isDefault
+                                    ? "text-[#FF7B00]"
+                                    : "text-slate-400 hover:text-slate-700"
+                                }`}
+                                title={
+                                  tpl.isDefault
+                                    ? "기본 양식으로 설정됨"
+                                    : "이 양식을 기본값으로 지정"
+                                }
+                              >
+                                ★
+                              </button>
+                              {!tpl.id.startsWith("builtin_") && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleDeleteTemplate(tpl.id, e)}
+                                  className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                                  title="양식 삭제"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 3. Save Current Setup as New Template (Inline Form) */}
+                  <div className="pt-2 border-t border-slate-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-slate-700">
+                        현재 설정을 새 양식으로 저장
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsSavingTemplate((o) => !o)}
+                        className="text-[10.5px] font-bold text-[#FF7B00] hover:underline cursor-pointer flex items-center gap-1"
+                      >
+                        <Plus className="w-3 h-3" />
+                        {isSavingTemplate ? "닫기" : "새로 저장하기"}
+                      </button>
+                    </div>
+
+                    {isSavingTemplate && (
+                      <div className="p-2.5 rounded bg-orange-50/80 border border-orange-200 space-y-2 text-xs">
+                        <input
+                          type="text"
+                          value={newTemplateName}
+                          onChange={(e) => setNewTemplateName(e.target.value)}
+                          placeholder={`양식 이름 (예: ${orientation === "landscape" ? "가로" : "세로"} ${items.length}행 맞춤형)`}
+                          className="w-full px-2 py-1 text-xs border border-slate-300 rounded bg-white focus:outline-none focus:border-[#FF7B00]"
+                        />
+                        <label className="flex items-center gap-1.5 text-[11px] text-slate-700 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={includeMemoInTemplate}
+                            onChange={(e) =>
+                              setIncludeMemoInTemplate(e.target.checked)
+                            }
+                            className="rounded border-slate-300 text-[#FF7B00] focus:ring-[#FF7B00]"
+                          />
+                          <span>현재 작성된 특기사항 메모도 서식에 포함</span>
+                        </label>
+                        <div className="flex justify-end gap-1.5 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => setIsSavingTemplate(false)}
+                            className="px-2 py-1 rounded border border-slate-300 bg-white text-slate-600 text-[11px] font-bold cursor-pointer"
+                          >
+                            취소
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSaveCurrentAsTemplate}
+                            className="px-2.5 py-1 rounded bg-[#FF7B00] hover:bg-[#e66f00] text-white text-[11px] font-bold cursor-pointer"
+                          >
+                            양식 저장
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {layoutPopoverOpen && (
               <div
                 ref={layoutPopoverRef}
@@ -3092,6 +3781,77 @@ export default function OrderPage() {
                       </button>
                     </div>
                   </div>
+                </div>
+
+                {/* Custom Order Templates Gallery & Pulldown inside Layout Popover */}
+                <div className="pt-2.5 border-t border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-black text-slate-800 flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-[#FF7B00]" />
+                      내가 설정한 양식 ({customTemplates.length}/20개)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsSavingTemplate((o) => !o)}
+                      className="text-[10.5px] font-bold text-[#FF7B00] hover:underline cursor-pointer flex items-center gap-0.5"
+                    >
+                      <Plus className="w-3 h-3" />
+                      새 양식 추가
+                    </button>
+                  </div>
+
+                  {/* Horizontal Scroll Mini Thumbnail Gallery */}
+                  <div className="relative">
+                    <div
+                      className="flex items-stretch gap-2 overflow-x-auto pb-1.5 pt-0.5 scrollbar-thin"
+                    >
+                      {customTemplates.map((tpl) => (
+                        <OrderMiniThumbnailCard
+                          key={tpl.id}
+                          template={tpl}
+                          isActive={tpl.id === activeTemplateId}
+                          onApply={handleApplyTemplate}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {isSavingTemplate && (
+                    <div className="p-2.5 rounded bg-orange-50/80 border border-orange-200 space-y-2 text-xs">
+                      <input
+                        type="text"
+                        value={newTemplateName}
+                        onChange={(e) => setNewTemplateName(e.target.value)}
+                        placeholder={`양식 이름 (예: ${orientation === "landscape" ? "가로" : "세로"} ${items.length}행 맞춤형)`}
+                        className="w-full px-2 py-1 text-xs border border-slate-300 rounded bg-white focus:outline-none focus:border-[#FF7B00]"
+                      />
+                      <label className="flex items-center gap-1.5 text-[11px] text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={includeMemoInTemplate}
+                          onChange={(e) => setIncludeMemoInTemplate(e.target.checked)}
+                          className="rounded border-slate-300 text-[#FF7B00] focus:ring-[#FF7B00]"
+                        />
+                        <span>현재 작성된 특기사항 메모도 서식에 포함</span>
+                      </label>
+                      <div className="flex justify-end gap-1.5 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setIsSavingTemplate(false)}
+                          className="px-2 py-1 rounded border border-slate-300 bg-white text-slate-600 text-[11px] font-bold cursor-pointer"
+                        >
+                          취소
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveCurrentAsTemplate}
+                          className="px-2.5 py-1 rounded bg-[#FF7B00] hover:bg-[#e66f00] text-white text-[11px] font-bold cursor-pointer"
+                        >
+                          양식 저장
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Save / Restore Default Preferences */}
