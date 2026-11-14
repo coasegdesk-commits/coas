@@ -78,6 +78,7 @@ import {
 } from "@/lib/order-draft";
 import { LayoutPresetManager } from "@/components/order/LayoutPresetManager";
 import { OrderHistoryDrawer } from "@/components/order/OrderHistoryDrawer";
+import { BuyerAuthModal } from "@/components/order/BuyerAuthModal";
 import {
   type OrderLayoutPreset,
   loadAllPresets,
@@ -86,6 +87,12 @@ import {
   type OrderHistoryRecord,
   addOrderHistoryRecord,
 } from "@/lib/order-history";
+import {
+  type BuyerSession,
+  getBuyerSession,
+  setBuyerSession,
+  logoutBuyerSession,
+} from "@/lib/order-auth";
 import type {
   AdminAffinityAction,
   CmsProduct,
@@ -891,6 +898,42 @@ export default function OrderPage() {
 
   // Right Drawer: Customer Order History State & Handlers
   const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
+
+  // Buyer Session State for Company Authentication (Easy Login)
+  const [buyerSession, setBuyerSessionState] = useState<BuyerSession>(() =>
+    getBuyerSession(),
+  );
+  const [buyerAuthModalOpen, setBuyerAuthModalOpen] = useState(false);
+
+  // Sync session changes from other tabs/events
+  useEffect(() => {
+    const handleSessionChange = (e: any) => {
+      if (e.detail) setBuyerSessionState(e.detail);
+    };
+    window.addEventListener("coas-buyer-session-change", handleSessionChange);
+    return () =>
+      window.removeEventListener("coas-buyer-session-change", handleSessionChange);
+  }, []);
+
+  // When buyer logs in successfully, prefill buyer form
+  const handleBuyerLoginSuccess = (session: BuyerSession) => {
+    setBuyerSessionState(session);
+    if (session.companyName) setCompanyName(session.companyName);
+    if (session.contactName) setContactName(session.contactName);
+    if (session.phone) setPhone(session.phone);
+    if (session.email) setEmail(session.email);
+    if (session.deliveryAddress) setDeliveryAddress(session.deliveryAddress);
+    if (session.shippingMethod) setShippingMethod(session.shippingMethod);
+  };
+
+  const handleBuyerLogout = () => {
+    const empty = logoutBuyerSession();
+    setBuyerSessionState(empty);
+    toast({
+      title: "로그아웃되었습니다.",
+      description: "거래처 간편로그인 상태가 해제되었습니다.",
+    });
+  };
 
   // 1. Apply Full Order from History to current order form
   const handleApplyFullHistoryOrder = (order: OrderHistoryRecord) => {
@@ -3369,6 +3412,36 @@ export default function OrderPage() {
               <span>거래처 히스토리</span>
             </button>
 
+            {/* Buyer Authentication Status / Quick Login Button */}
+            {buyerSession.isAuthenticated ? (
+              <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-700 rounded px-2 py-0.5 shrink-0 text-[11px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                <span
+                  className="font-bold text-slate-200 truncate max-w-[130px]"
+                  title={buyerSession.companyName}
+                >
+                  {buyerSession.companyName}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleBuyerLogout}
+                  className="text-[10px] text-slate-400 hover:text-white underline cursor-pointer"
+                  title="로그아웃"
+                >
+                  로그아웃
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setBuyerAuthModalOpen(true)}
+                className="px-2 py-1 rounded bg-[#FF7B00] hover:bg-[#e66f00] text-white text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shrink-0 shadow-xs"
+                title="사업자/휴대폰/카카오/네이버로 간편로그인하여 우리 회사 발주 이력을 불러옵니다"
+              >
+                <span>🔑 업체 간편로그인</span>
+              </button>
+            )}
+
             <div className="h-3.5 w-[1px] bg-slate-600 mx-0.5 shrink-0" />
 
             <button
@@ -3706,15 +3779,26 @@ export default function OrderPage() {
           Matches left catalog drawer style with always-visible orange tab!
          ===================================================================== */}
       {!submittedOrderNumber && (
-        <OrderHistoryDrawer
-          isOpen={historyDrawerOpen}
-          onToggle={() => setHistoryDrawerOpen((o) => !o)}
-          onClose={() => setHistoryDrawerOpen(false)}
-          currentCompanyName={companyName}
-          onApplyFullOrder={handleApplyFullHistoryOrder}
-          onAddSelectedItems={handleAddHistorySelectedItems}
-          onSaveCurrentAsHistory={handleSaveCurrentToHistory}
-        />
+        <>
+          <OrderHistoryDrawer
+            isOpen={historyDrawerOpen}
+            onToggle={() => setHistoryDrawerOpen((o) => !o)}
+            onClose={() => setHistoryDrawerOpen(false)}
+            buyerSession={buyerSession}
+            onOpenLoginModal={() => setBuyerAuthModalOpen(true)}
+            onLogout={handleBuyerLogout}
+            onApplyFullOrder={handleApplyFullHistoryOrder}
+            onAddSelectedItems={handleAddHistorySelectedItems}
+            onSaveCurrentAsHistory={handleSaveCurrentToHistory}
+          />
+
+          {/* All-in-One B2B Buyer Authentication Modal (1, 2, 3 options) */}
+          <BuyerAuthModal
+            isOpen={buyerAuthModalOpen}
+            onClose={() => setBuyerAuthModalOpen(false)}
+            onSuccess={handleBuyerLoginSuccess}
+          />
+        </>
       )}
 
       {/* =====================================================================
