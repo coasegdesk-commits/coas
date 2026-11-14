@@ -935,28 +935,85 @@ export default function OrderPage() {
     });
   };
 
-  // 1. Apply Full Order from History to current order form
-  const handleApplyFullHistoryOrder = (order: OrderHistoryRecord) => {
-    if (order.companyName) setCompanyName(order.companyName);
-    if (order.contactName) setContactName(order.contactName);
-    if (order.phone) setPhone(order.phone);
-    if (order.email) setEmail(order.email);
-    if (order.deliveryAddress) setDeliveryAddress(order.deliveryAddress);
-    if (order.shippingMethod) setShippingMethod(order.shippingMethod);
-    if (order.desiredDate) setDesiredDate(order.desiredDate);
-    if (order.memo) setMemo(order.memo);
+  // 1. Apply Full Order from History (Supports "replace" to start fresh OR "append" to merge with existing items!)
+  const handleApplyFullHistoryOrder = (
+    order: OrderHistoryRecord,
+    mode: "replace" | "append" = "replace",
+  ) => {
+    if (mode === "replace") {
+      // Replace Entire Order Form
+      if (order.companyName) setCompanyName(order.companyName);
+      if (order.contactName) setContactName(order.contactName);
+      if (order.phone) setPhone(order.phone);
+      if (order.email) setEmail(order.email);
+      if (order.deliveryAddress) setDeliveryAddress(order.deliveryAddress);
+      if (order.shippingMethod) setShippingMethod(order.shippingMethod);
+      if (order.desiredDate) setDesiredDate(order.desiredDate);
+      if (order.memo) setMemo(order.memo);
 
-    const importedRows = order.items.map((it) => createEmptyOrderRow(it));
-    const targetLength = Math.max(MIN_ORDER_ROW_COUNT, importedRows.length);
-    while (importedRows.length < targetLength) {
-      importedRows.push(createEmptyOrderRow());
+      const importedRows = order.items.map((it) => createEmptyOrderRow(it));
+      const targetLength = Math.max(MIN_ORDER_ROW_COUNT, importedRows.length);
+      while (importedRows.length < targetLength) {
+        importedRows.push(createEmptyOrderRow());
+      }
+      setItems(importedRows);
+
+      toast({
+        title: `[${order.orderDate} 주문] 새로 채우기 완료`,
+        description: `총 ${order.items.length}개 품목이 입력되었습니다. 수량을 자유롭게 수정해 주세요.`,
+      });
+    } else {
+      // Append & Merge to Existing Items
+      if (!deliveryAddress.trim() && order.deliveryAddress) {
+        setDeliveryAddress(order.deliveryAddress);
+      }
+      if (order.memo?.trim()) {
+        setMemo((prev) => {
+          const cleanPrev = prev.trim();
+          if (!cleanPrev) return order.memo!.trim();
+          if (cleanPrev.includes(order.memo!.trim())) return cleanPrev;
+          return `${cleanPrev}\n[추가] ${order.memo!.trim()}`;
+        });
+      }
+
+      setItems((prev) => {
+        const next = [...prev];
+        let addIdx = 0;
+        const toAdd = order.items;
+
+        // 1) First fill any completely empty rows
+        for (let i = 0; i < next.length && addIdx < toAdd.length; i++) {
+          const r = next[i];
+          const isEmpty =
+            !r.productId &&
+            !r.productName.trim() &&
+            !r.spec.trim() &&
+            !r.quantity.trim();
+          if (isEmpty) {
+            next[i] = createEmptyOrderRow(toAdd[addIdx]);
+            addIdx++;
+          }
+        }
+
+        // 2) If still items remaining, append new rows
+        while (addIdx < toAdd.length) {
+          next.push(createEmptyOrderRow(toAdd[addIdx]));
+          addIdx++;
+        }
+
+        // Keep minimum row count
+        while (next.length < MIN_ORDER_ROW_COUNT) {
+          next.push(createEmptyOrderRow());
+        }
+
+        return next;
+      });
+
+      toast({
+        title: `[${order.orderDate} 주문] 기존 발주서에 합치기 완료!`,
+        description: `기존 품목 아래에 ${order.items.length}개 품목이 성공적으로 추가되었습니다.`,
+      });
     }
-    setItems(importedRows);
-
-    toast({
-      title: `[${order.companyName}] 주문 내용이 적용되었습니다.`,
-      description: `총 ${order.items.length}개 품목 및 발주 정보가 입력되었습니다. 수량이나 품목을 자유롭게 수정해 주세요.`,
-    });
   };
 
   // 2. Add Selected Items from History to empty rows or append

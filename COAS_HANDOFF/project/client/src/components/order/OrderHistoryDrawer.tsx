@@ -23,6 +23,9 @@ import {
   LogOut,
   ShieldCheck,
   UserCheck,
+  Layers,
+  MapPin,
+  FileCode2,
 } from "lucide-react";
 import type { OrderLineItem } from "@shared/cms-types";
 import {
@@ -42,10 +45,10 @@ interface OrderHistoryDrawerProps {
   isOpen: boolean;
   onToggle: () => void;
   onClose: () => void;
-  buyerSession: BuyerSession;
-  onOpenLoginModal: () => void;
-  onLogout: () => void;
-  onApplyFullOrder: (order: OrderHistoryRecord) => void;
+  buyerSession?: BuyerSession;
+  onOpenLoginModal?: () => void;
+  onLogout?: () => void;
+  onApplyFullOrder: (order: OrderHistoryRecord, mode: "replace" | "append") => void;
   onAddSelectedItems: (items: OrderLineItem[]) => void;
   onSaveCurrentAsHistory: () => void;
 }
@@ -75,7 +78,7 @@ export function OrderHistoryDrawer({
   }, [isOpen]);
 
   // STRICT COMPANY ISOLATION:
-  // Show ONLY orders belonging to the currently logged-in company!
+  // Show ONLY orders belonging to currently logged-in company!
   const myCompanyOrders = useMemo(() => {
     if (!buyerSession.isAuthenticated || !buyerSession.companyName.trim()) {
       return [];
@@ -165,7 +168,7 @@ export function OrderHistoryDrawer({
     <>
       {/* Right Sliding Drawer */}
       <aside
-        className={`fixed top-14 right-0 bottom-0 z-40 w-[440px] max-w-[90vw] bg-white border-l-2 border-[#FF7B00] shadow-2xl flex flex-col transition-transform duration-300 ease-in-out no-print ${
+        className={`fixed top-14 right-0 bottom-0 z-40 w-[450px] max-w-[92vw] bg-white border-l-2 border-[#FF7B00] shadow-2xl flex flex-col transition-transform duration-300 ease-in-out no-print ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
         aria-label="우리 회사 주문 히스토리"
@@ -191,7 +194,7 @@ export function OrderHistoryDrawer({
         {/* 1. Drawer Header (Company Authentication Status) */}
         <div className="p-3 bg-slate-900 text-white border-b border-slate-700 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-7 h-7 rounded-md bg-[#FF7B00] flex items-center justify-center text-white shrink-0">
+            <div className="w-7 h-7 rounded-md bg-[#FF7B00] flex items-center justify-center text-white shrink-0 shadow-xs">
               <Building2 className="w-4 h-4" />
             </div>
             <div className="min-w-0">
@@ -203,7 +206,7 @@ export function OrderHistoryDrawer({
                 </span>
                 {buyerSession.isAuthenticated && (
                   <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-300 font-bold border border-emerald-500/40 shrink-0">
-                    인증됨
+                    인증완료
                   </span>
                 )}
               </div>
@@ -292,7 +295,7 @@ export function OrderHistoryDrawer({
             {/* Quick Action Bar: Save Current Order as History */}
             <div className="px-3 py-2 bg-orange-50/70 border-b border-orange-200 flex items-center justify-between gap-2 shrink-0">
               <span className="text-[10.5px] font-bold text-orange-950 flex items-center gap-1 truncate">
-                <UserCheck className="w-3.5 h-3.5 text-[#FF7B00]" />
+                <UserCheck className="w-3.5 h-3.5 text-[#FF7B00] shrink-0" />
                 <span className="truncate">
                   {buyerSession.contactName || "담당자"} 님
                 </span>
@@ -314,14 +317,14 @@ export function OrderHistoryDrawer({
             </div>
 
             {/* Search Box within My Company's Orders */}
-            <div className="p-3 bg-white border-b border-slate-200 shrink-0">
+            <div className="p-2.5 bg-white border-b border-slate-200 shrink-0">
               <div className="relative">
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="우리 회사 주문 검색 (품목명, 규격, 발주번호)..."
+                  placeholder="품목명, 규격, 발주번호 검색..."
                   className="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:border-[#FF7B00] focus:bg-white transition-colors"
                 />
                 {searchQuery && (
@@ -336,7 +339,7 @@ export function OrderHistoryDrawer({
               </div>
             </div>
 
-            {/* History Cards List (Exclusively for this company) */}
+            {/* History Cards List (Redesigned with Premium Layout & Merge Options) */}
             <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-[#F8FAFC] scrollbar-thin">
               {filteredList.length === 0 ? (
                 <div className="py-12 px-4 text-center space-y-3">
@@ -360,84 +363,112 @@ export function OrderHistoryDrawer({
                   return (
                     <div
                       key={order.id}
-                      className="bg-white rounded-lg border border-slate-200 shadow-2xs hover:shadow-md transition-all overflow-hidden"
+                      className="bg-white rounded-xl border border-slate-200 hover:border-orange-300 shadow-2xs hover:shadow-md transition-all overflow-hidden"
                     >
-                      {/* Card Header: Date, OrderNumber, Favorite, Delete */}
-                      <div className="p-3 pb-2 border-b border-slate-100">
-                        <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1">
-                          <span className="flex items-center gap-1 font-semibold text-slate-700">
-                            <Calendar className="w-3 h-3 text-slate-400" />
+                      {/* 1. Card Top Badge Bar: Date + OrderNumber + Badges + Actions */}
+                      <div className="px-3.5 pt-3 pb-2 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-800 text-[10.5px] font-black flex items-center gap-1">
+                            <Calendar className="w-3 h-3 text-slate-600" />
                             {order.orderDate}
                           </span>
                           <span className="font-mono text-[10px] text-slate-400">
                             {order.orderNumber}
                           </span>
-                          <div className="flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => handleToggleFav(order.id)}
-                              className={`p-1 rounded hover:bg-slate-100 cursor-pointer transition-colors ${
-                                order.isFavorite
-                                  ? "text-amber-500"
-                                  : "text-slate-300 hover:text-amber-400"
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleFav(order.id)}
+                            className={`p-1 rounded hover:bg-slate-100 cursor-pointer transition-colors ${
+                              order.isFavorite
+                                ? "text-amber-500"
+                                : "text-slate-300 hover:text-amber-400"
+                            }`}
+                            title={order.isFavorite ? "단골 주문 해제" : "★ 단골 주문 등록"}
+                          >
+                            <Star
+                              className={`w-3.5 h-3.5 ${
+                                order.isFavorite ? "fill-current" : ""
                               }`}
-                              title={order.isFavorite ? "단골 주문 해제" : "★ 단골 주문 등록"}
-                            >
-                              <Star
-                                className={`w-3.5 h-3.5 ${
-                                  order.isFavorite ? "fill-current" : ""
-                                }`}
-                              />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(order.id, order.orderNumber)}
-                              className="p-1 rounded text-slate-300 hover:text-red-500 hover:bg-red-50 cursor-pointer transition-colors"
-                              title="이력 삭제"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
-                          </div>
+                            />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(order.id, order.orderNumber)}
+                            className="p-1 rounded text-slate-300 hover:text-red-500 hover:bg-red-50 cursor-pointer transition-colors"
+                            title="이력 삭제"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
                         </div>
+                      </div>
 
-                        {/* Order Summary & Item Count Badge */}
+                      {/* 2. Card Body: Summary + Items Chips + Delivery & Memo */}
+                      <div className="p-3.5 space-y-2">
+                        {/* Title & Quantity Pill */}
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-black text-slate-900 truncate">
-                            {order.contactName ? `${order.contactName} 주문 건` : "발주 주문 건"}
-                          </span>
-                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-sky-50 text-sky-800 border border-sky-200 shrink-0">
-                            총 {order.itemCount}품목 · {order.totalQuantity}개
+                          <div className="text-xs font-black text-slate-900 truncate flex items-center gap-1.5">
+                            <Package className="w-3.5 h-3.5 text-[#FF7B00] shrink-0" />
+                            <span className="truncate">
+                              {order.contactName ? `${order.contactName} 발주 건` : "발주 주문 건"}
+                            </span>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-full bg-orange-50 border border-orange-200 text-[#FF7B00] text-[10px] font-extrabold shrink-0 shadow-2xs">
+                            총 {order.itemCount}품목 · 합계 {order.totalQuantity}개
                           </span>
                         </div>
 
-                        {/* Summary text */}
-                        <p className="text-[11px] text-slate-600 mt-1 line-clamp-2 leading-relaxed">
-                          {order.summary}
-                        </p>
+                        {/* Visual Item Chips */}
+                        <div className="flex flex-wrap gap-1 pt-0.5">
+                          {order.items.slice(0, 4).map((it, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-0.5 rounded bg-slate-100/90 text-slate-700 text-[10.5px] font-semibold flex items-center gap-1 border border-slate-200/80 truncate max-w-full"
+                            >
+                              <span className="truncate">{it.productName || it.spec}</span>
+                              <strong className="text-slate-900 shrink-0 font-mono">
+                                {it.quantity}{it.unit}
+                              </strong>
+                            </span>
+                          ))}
+                          {order.items.length > 4 && (
+                            <span className="px-1.5 py-0.5 rounded bg-slate-50 text-slate-500 text-[10px] font-bold border border-slate-200">
+                              +{order.items.length - 4}개
+                            </span>
+                          )}
+                        </div>
 
-                        {/* Delivery info & Memo preview */}
+                        {/* Delivery Address & Memo Preview Box */}
                         {(order.deliveryAddress || order.memo) && (
-                          <div className="mt-1.5 pt-1.5 border-t border-slate-100 text-[10px] text-slate-500 space-y-0.5">
+                          <div className="p-2 rounded-lg bg-slate-50 border border-slate-150 text-[10.5px] text-slate-600 space-y-1">
                             {order.deliveryAddress && (
-                              <p className="truncate">
-                                📍 납품지: {order.deliveryAddress}
-                              </p>
+                              <div className="flex items-start gap-1 truncate text-slate-700">
+                                <MapPin className="w-3 h-3 text-slate-400 mt-0.5 shrink-0" />
+                                <span className="truncate font-medium">
+                                  {order.deliveryAddress}
+                                </span>
+                              </div>
                             )}
                             {order.memo && (
-                              <p className="truncate text-slate-600 font-medium">
-                                📝 메모: {order.memo}
-                              </p>
+                              <div className="flex items-start gap-1 text-slate-800 font-medium">
+                                <FileText className="w-3 h-3 text-[#FF7B00] mt-0.5 shrink-0" />
+                                <span className="line-clamp-2 leading-tight">
+                                  {order.memo}
+                                </span>
+                              </div>
                             )}
                           </div>
                         )}
                       </div>
 
-                      {/* Expandable Line-Items Preview */}
+                      {/* 3. Expandable Detailed Line-Items */}
                       {isExpanded && (
-                        <div className="p-2.5 bg-slate-50/80 border-b border-slate-200 space-y-1.5 text-xs">
+                        <div className="px-3.5 pb-3 pt-1 bg-slate-50/70 border-t border-slate-100 space-y-2 text-xs">
                           <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 pb-1 border-b border-slate-200">
                             <span>상세 품목 ({order.items.length}개)</span>
-                            <span>체크 후 선택 추가 가능</span>
+                            <span className="text-orange-700">체크 후 선택 추가 가능</span>
                           </div>
 
                           <div className="max-h-[160px] overflow-y-auto space-y-1 scrollbar-thin">
@@ -446,9 +477,9 @@ export function OrderHistoryDrawer({
                               return (
                                 <label
                                   key={idx}
-                                  className={`flex items-start gap-2 p-1.5 rounded border text-[11px] cursor-pointer transition-colors ${
+                                  className={`flex items-start gap-2 p-1.5 rounded-lg border text-[11px] cursor-pointer transition-colors ${
                                     isChecked
-                                      ? "bg-orange-50 border-orange-300 text-orange-950 font-semibold"
+                                      ? "bg-orange-50 border-orange-300 text-orange-950 font-semibold shadow-2xs"
                                       : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100"
                                   }`}
                                 >
@@ -463,12 +494,12 @@ export function OrderHistoryDrawer({
                                       <span className="font-bold truncate">
                                         {it.productName}
                                       </span>
-                                      <span className="text-[10px] text-slate-600 shrink-0 font-mono">
+                                      <span className="text-[10.5px] text-slate-900 font-extrabold shrink-0 font-mono">
                                         {it.quantity} {it.unit}
                                       </span>
                                     </div>
                                     {(it.spec || it.color || it.note) && (
-                                      <div className="text-[10px] text-slate-500 truncate">
+                                      <div className="text-[10px] text-slate-500 truncate mt-0.5">
                                         {[it.spec, it.color, it.note]
                                           .filter(Boolean)
                                           .join(" · ")}
@@ -484,7 +515,7 @@ export function OrderHistoryDrawer({
                           <button
                             type="button"
                             onClick={() => handleAddSelected(order)}
-                            className="w-full py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                            className="w-full py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-colors"
                           >
                             <Plus className="w-3 h-3 text-[#FF7B00]" />
                             <span>선택한 {checkedIndices.length}개 품목만 발주서에 추가</span>
@@ -492,38 +523,46 @@ export function OrderHistoryDrawer({
                         </div>
                       )}
 
-                      {/* Card Bottom Actions: Expand Toggle + Apply Full Order */}
-                      <div className="p-2 bg-slate-50/50 flex items-center justify-between gap-2">
+                      {/* 4. Card Bottom Actions: Expand Toggle + [새로 채우기] + [➕ 이어서 합치기] */}
+                      <div className="p-2.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2">
+                        {/* Expand/Collapse details */}
                         <button
                           type="button"
                           onClick={() => setExpandedId((prev) => (prev === order.id ? null : order.id))}
-                          className="px-2 py-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 flex items-center gap-0.5 cursor-pointer"
+                          className="px-2 py-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 flex items-center gap-0.5 cursor-pointer rounded hover:bg-slate-200/60"
                         >
                           <span>품목 {order.items.length}건</span>
                           {isExpanded ? (
-                            <ChevronUp className="w-3 h-3" />
+                            <ChevronUp className="w-3 h-3 text-slate-500" />
                           ) : (
-                            <ChevronDown className="w-3 h-3" />
+                            <ChevronDown className="w-3 h-3 text-slate-500" />
                           )}
                         </button>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                `[${order.orderDate} 주문 건] 품목 내용을 현재 발주서에 불러오시겠습니까?\n기존 빈 품목이 해당 주문 품목으로 교체됩니다.`,
-                              )
-                            ) {
-                              onApplyFullOrder(order);
-                            }
-                          }}
-                          className="px-2.5 py-1 rounded bg-[#FF7B00] hover:bg-[#e66f00] text-white text-[11px] font-black flex items-center gap-1 cursor-pointer shadow-2xs transition-colors"
-                          title="이 주문의 모든 품목을 발주서에 채워 빠르게 수정합니다"
-                        >
-                          <Copy className="w-3 h-3" />
-                          <span>이 주문 전체 불러오기</span>
-                        </button>
+                        {/* Dual Action Buttons: Replace VS. Merge/Append */}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {/* Option 1: Replace Entire Form */}
+                          <button
+                            type="button"
+                            onClick={() => onApplyFullOrder(order, "replace")}
+                            className="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                            title="현재 작성 중인 발주서를 이 주문으로 전체 새로 채웁니다"
+                          >
+                            <Copy className="w-3 h-3 text-slate-500" />
+                            <span>새로 채우기</span>
+                          </button>
+
+                          {/* Option 2: Append & Merge (사용자가 요청하신 다른 건 합치기 기능!) */}
+                          <button
+                            type="button"
+                            onClick={() => onApplyFullOrder(order, "append")}
+                            className="px-2.5 py-1.5 rounded-lg bg-[#FF7B00] hover:bg-[#e66f00] text-white text-[11px] font-black flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                            title="현재 발주서의 기존 품목 아래에 이 주문 품목들을 이어서 합칩니다"
+                          >
+                            <Layers className="w-3 h-3" />
+                            <span>➕ 이어서 합치기</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
