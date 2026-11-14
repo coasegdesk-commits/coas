@@ -861,8 +861,7 @@ export default function OrderPage() {
   };
 
   const handleFitToScreen = () => {
-    const drawerOffset = drawerOpen && window.innerWidth >= 1024 ? 530 : 116;
-    const availW = Math.max(360, window.innerWidth - drawerOffset);
+    const availW = Math.max(360, window.innerWidth - 116);
     const fitPct = Math.max(
       60,
       Math.min(130, Math.floor(((availW / sheetBaseWidth) * 100) / 5) * 5),
@@ -2999,9 +2998,7 @@ export default function OrderPage() {
       {!submittedOrderNumber && (
         <div
           data-testid="external-a4-control-bar"
-          className={`fixed top-14 left-0 right-0 h-11 z-40 bg-slate-800/95 backdrop-blur-md text-white border-b border-slate-700 shadow-md px-3 flex items-center justify-center transition-[padding] duration-300 ease-in-out no-print ${
-            drawerOpen ? "lg:pl-[440px]" : ""
-          }`}
+          className="fixed top-14 left-0 right-0 h-11 z-40 bg-slate-800/95 backdrop-blur-md text-white border-b border-slate-700 shadow-md px-3 flex items-center justify-center no-print"
         >
           <div className="flex items-center gap-1.5 whitespace-nowrap overflow-x-auto max-w-full py-1">
             <span className="px-2 py-0.5 rounded bg-[#FF7B00] text-white text-[11px] font-bold shrink-0">
@@ -4732,9 +4729,7 @@ export default function OrderPage() {
           • Every sheet page is strictly locked to true A4 proportions (1 : 1.414)
          ===================================================================== */}
       <div
-        className={`bg-[#EBF0F5] min-h-screen pt-[132px] pb-12 px-4 overflow-x-auto transition-[padding] duration-300 ease-in-out print-sheet-wrapper ${
-          drawerOpen && !submittedOrderNumber ? "lg:pl-[440px]" : ""
-        }`}
+        className="bg-[#EBF0F5] min-h-screen pt-[132px] pb-12 px-4 overflow-x-auto print-sheet-wrapper"
       >
         <div className="flex justify-center">
           {submittedOrderNumber ? (
