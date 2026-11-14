@@ -1,0 +1,28 @@
+{
+  "totalLearnedOrders": 0,
+  "learnedOrderIds": [],
+  "records": {
+    "sd-60::wood::sd-01-steel": {
+      "pairKey": "sd-60::wood::sd-01-steel",
+      "anchorId": "sd-60",
+      "targetId": "sd-01-steel",
+      "doorType": "wood",
+      "cartCount": 0,
+      "orderCount": 0,
+      "pinned": false,
+      "excluded": false,
+      "updatedAt": "2026-11-13T22:05:39.777Z"
+    },
+    "sd-60::wood::sl-2831": {
+      "pairKey": "sd-60::wood::sl-2831",
+      "anchorId": "sd-60",
+      "targetId": "sl-2831",
+      "doorType": "wood",
+      "cartCount": 0,
+      "orderCount": 0,
+      "pinned": false,
+      "excluded": false,
+      "updatedAt": "2026-11-13T22:05:39.775Z"
+    }
+  }
+}
