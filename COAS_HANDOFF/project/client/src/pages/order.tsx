@@ -2711,7 +2711,7 @@ export default function OrderPage() {
       `}</style>
 
       {/* Fixed Top Header Dark Backdrop (56px = h-14) so main navbar is always dark and crisp */}
-      <div className="fixed top-0 left-0 right-0 h-14 bg-slate-900 border-b border-slate-800 z-40 no-print pointer-events-none" />
+      <div className="fixed top-0 left-0 right-0 h-14 bg-slate-900 border-b border-slate-800 z-50 no-print pointer-events-none" />
 
       {/* =====================================================================
           FIXED TOP SUB-HEADER CONTROL BAR (1-Row Full-Width Ribbon under Header)
@@ -2721,7 +2721,7 @@ export default function OrderPage() {
       {!submittedOrderNumber && (
         <div
           data-testid="external-a4-control-bar"
-          className={`fixed top-14 left-0 right-0 h-11 z-30 bg-slate-800/95 backdrop-blur-md text-white border-b border-slate-700 shadow-md px-3 flex items-center justify-center transition-[padding] duration-300 ease-in-out no-print ${
+          className={`fixed top-14 left-0 right-0 h-11 z-40 bg-slate-800/95 backdrop-blur-md text-white border-b border-slate-700 shadow-md px-3 flex items-center justify-center transition-[padding] duration-300 ease-in-out no-print ${
             drawerOpen ? "lg:pl-[440px]" : ""
           }`}
         >
@@ -4473,7 +4473,7 @@ export default function OrderPage() {
                     data-testid="button-attachment-index-tab"
                     onClick={() => setAttachmentTabOpen((o) => !o)}
                     title="클릭하거나 파일을 드래그하여 PDF · 캐드도면(.dwg/.dxf) · 엑셀(.xlsx) 등 첨부파일을 발주서와 함께 발송합니다"
-                    className={`absolute left-full top-[26px] -ml-[1px] z-30 w-[48px] min-h-[172px] py-2.5 px-1 rounded-r-xl border border-l-slate-200 shadow-lg flex flex-col items-center justify-between gap-1.5 cursor-pointer select-none transition-all ${
+                    className={`absolute left-full top-[26px] -ml-[1px] z-10 w-[48px] min-h-[172px] py-2.5 px-1 rounded-r-xl border border-l-slate-200 shadow-lg flex flex-col items-center justify-between gap-1.5 cursor-pointer select-none transition-all ${
                       attachmentDragging
                         ? "bg-sky-50 border-sky-400 border-r-[6px] border-r-sky-500 scale-[1.03]"
                         : attachmentTabOpen
@@ -4534,7 +4534,7 @@ export default function OrderPage() {
                   {attachmentTabOpen && (
                     <div
                       data-testid="popover-attachment-index-panel"
-                      className="absolute right-0 top-[26px] z-40 w-[368px] max-w-[90vw] bg-white border-2 border-[#FF7B00] rounded-l-xl rounded-br-xl shadow-2xl overflow-hidden"
+                      className="absolute right-0 top-[26px] z-30 w-[368px] max-w-[90vw] bg-white border-2 border-[#FF7B00] rounded-l-xl rounded-br-xl shadow-2xl overflow-hidden"
                     >
                       {/* Panel Top Header */}
                       <div className="bg-slate-900 text-white px-3.5 py-2.5 flex items-center justify-between gap-2">
