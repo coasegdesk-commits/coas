@@ -1,0 +1,509 @@
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import {
+  History,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  Star,
+  Copy,
+  Plus,
+  Trash2,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Building2,
+  Calendar,
+  Package,
+  FileText,
+  AlertCircle,
+  X,
+  ArrowRight,
+} from "lucide-react";
+import type { OrderLineItem } from "@shared/cms-types";
+import {
+  type OrderHistoryRecord,
+  loadOrderHistory,
+  deleteOrderHistoryRecord,
+  toggleOrderHistoryFavorite,
+} from "@/lib/order-history";
+import { useToast } from "@/hooks/use-toast";
+
+interface OrderHistoryDrawerProps {
+  isOpen: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+  currentCompanyName: string;
+  onApplyFullOrder: (order: OrderHistoryRecord) => void;
+  onAddSelectedItems: (items: OrderLineItem[]) => void;
+  onSaveCurrentAsHistory: () => void;
+}
+
+export function OrderHistoryDrawer({
+  isOpen,
+  onToggle,
+  onClose,
+  currentCompanyName,
+  onApplyFullOrder,
+  onAddSelectedItems,
+  onSaveCurrentAsHistory,
+}: OrderHistoryDrawerProps) {
+  const { toast } = useToast();
+  const [historyList, setHistoryList] = useState<OrderHistoryRecord[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterMode, setFilterMode] = useState<"current" | "all">("all");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [selectedItemsMap, setSelectedItemsMap] = useState<Record<string, number[]>>({});
+
+  // Reload history whenever drawer opens
+  useEffect(() => {
+    if (isOpen) {
+      const data = loadOrderHistory();
+      setHistoryList(data);
+      // If current company name is filled and exists in history, default to current company filter
+      const cleanCompany = currentCompanyName.trim().toLowerCase();
+      if (cleanCompany) {
+        const hasMatch = data.some((r) =>
+          r.companyName.toLowerCase().includes(cleanCompany),
+        );
+        if (hasMatch) {
+          setFilterMode("current");
+        }
+      }
+    }
+  }, [isOpen, currentCompanyName]);
+
+  const cleanCurrentCompany = currentCompanyName.trim();
+
+  // Filtered list
+  const filteredList = useMemo(() => {
+    return historyList.filter((item) => {
+      // 1. Company Filter
+      if (filterMode === "current" && cleanCurrentCompany) {
+        if (!item.companyName.toLowerCase().includes(cleanCurrentCompany.toLowerCase())) {
+          return false;
+        }
+      }
+
+      // 2. Search Query Filter
+      if (searchQuery.trim()) {
+        const q = searchQuery.trim().toLowerCase();
+        const matchCompany = item.companyName.toLowerCase().includes(q);
+        const matchOrderNum = item.orderNumber.toLowerCase().includes(q);
+        const matchContact = item.contactName.toLowerCase().includes(q);
+        const matchMemo = (item.memo || "").toLowerCase().includes(q);
+        const matchItem = item.items.some(
+          (it) =>
+            it.productName.toLowerCase().includes(q) ||
+            it.spec.toLowerCase().includes(q) ||
+            (it.note || "").toLowerCase().includes(q),
+        );
+        if (!matchCompany && !matchOrderNum && !matchContact && !matchMemo && !matchItem) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [historyList, filterMode, cleanCurrentCompany, searchQuery]);
+
+  const currentCompanyCount = useMemo(() => {
+    if (!cleanCurrentCompany) return 0;
+    return historyList.filter((item) =>
+      item.companyName.toLowerCase().includes(cleanCurrentCompany.toLowerCase()),
+    ).length;
+  }, [historyList, cleanCurrentCompany]);
+
+  // Handle Delete
+  const handleDelete = (id: string, orderNumber: string) => {
+    if (!window.confirm(`[${orderNumber}] 주문 이력을 삭제하시겠습니까?`)) {
+      return;
+    }
+    const updated = deleteOrderHistoryRecord(id);
+    setHistoryList(updated);
+    toast({
+      title: "주문 이력이 삭제되었습니다.",
+      description: orderNumber,
+    });
+  };
+
+  // Handle Toggle Favorite
+  const handleToggleFav = (id: string) => {
+    const updated = toggleOrderHistoryFavorite(id);
+    setHistoryList(updated);
+  };
+
+  // Toggle item checkbox in an expanded order
+  const handleToggleItemCheck = (orderId: string, itemIdx: number) => {
+    setSelectedItemsMap((prev) => {
+      const current = prev[orderId] || [];
+      const next = current.includes(itemIdx)
+        ? current.filter((i) => i !== itemIdx)
+        : [...current, itemIdx];
+      return { ...prev, [orderId]: next };
+    });
+  };
+
+  // Add only selected items from this order
+  const handleAddSelected = (order: OrderHistoryRecord) => {
+    const indices = selectedItemsMap[order.id] || [];
+    if (indices.length === 0) {
+      toast({
+        title: "선택된 품목이 없습니다.",
+        description: "추가할 품목의 체크박스를 선택해 주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const toAdd = indices.map((idx) => order.items[idx]).filter(Boolean);
+    onAddSelectedItems(toAdd);
+    toast({
+      title: `${toAdd.length}개 품목이 발주서에 추가되었습니다.`,
+      description: `[${order.companyName}] 발주 품목 추가 완료`,
+    });
+  };
+
+  return (
+    <>
+      {/* Right Sliding Drawer */}
+      <aside
+        className={`fixed top-14 right-0 bottom-0 z-40 w-[440px] max-w-[90vw] bg-white border-l-2 border-[#FF7B00] shadow-2xl flex flex-col transition-transform duration-300 ease-in-out no-print ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+        aria-label="거래처 주문 히스토리"
+      >
+        {/* Toggle Tab Attached to the Left Edge of Drawer (Always visible on right edge of screen) */}
+        <button
+          type="button"
+          onClick={onToggle}
+          className="absolute right-full top-1/2 -translate-y-1/2 bg-[#FF7B00] hover:bg-[#e66f00] text-white rounded-l-lg px-2 py-4 shadow-lg border border-r-0 border-orange-600 flex flex-col items-center gap-1.5 cursor-pointer transition-colors"
+          title={isOpen ? "거래처 히스토리 닫기" : "거래처 주문 히스토리 열기"}
+        >
+          {isOpen ? (
+            <ChevronRight className="w-4 h-4" />
+          ) : (
+            <ChevronLeft className="w-4 h-4" />
+          )}
+          <History className="w-3.5 h-3.5 mt-0.5 text-orange-200" />
+          <span className="text-[11px] font-bold leading-tight [writing-mode:vertical-rl] tracking-wider">
+            {isOpen ? "히스토리 닫기" : "거래처 주문 히스토리"}
+          </span>
+        </button>
+
+        {/* 1. Drawer Header */}
+        <div className="p-3 bg-slate-900 text-white border-b border-slate-700 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-md bg-[#FF7B00] flex items-center justify-center text-white">
+              <History className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-xs font-black flex items-center gap-1.5">
+                <span>거래처 주문 히스토리</span>
+                <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-slate-800 text-orange-300 font-semibold border border-slate-700">
+                  총 {historyList.length}건
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-400">
+                과거 주문을 원클릭으로 불러와 빠르게 수정·발주
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+            title="닫기"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* 2. Quick Action Bar: Save Current Order as History */}
+        <div className="px-3 py-2 bg-orange-50/70 border-b border-orange-200 flex items-center justify-between gap-2 shrink-0">
+          <span className="text-[10.5px] font-bold text-orange-950 flex items-center gap-1">
+            <Building2 className="w-3.5 h-3.5 text-[#FF7B00]" />
+            {cleanCurrentCompany ? (
+              <span className="truncate max-w-[200px]">
+                작성 중: <strong>{cleanCurrentCompany}</strong>
+              </span>
+            ) : (
+              <span>새로운 발주서 작성 중</span>
+            )}
+          </span>
+
+          <button
+            type="button"
+            onClick={onSaveCurrentAsHistory}
+            className="px-2 py-1 rounded bg-[#FF7B00] hover:bg-[#e66f00] text-white text-[10.5px] font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs shrink-0"
+            title="현재 작성 중인 발주서 내용을 히스토리에 보관합니다"
+          >
+            <Plus className="w-3 h-3" />
+            <span>현재 발주서 보관</span>
+          </button>
+        </div>
+
+        {/* 3. Filter Tabs & Search Bar */}
+        <div className="p-3 bg-white border-b border-slate-200 space-y-2 shrink-0">
+          {/* Filter Segmented Buttons */}
+          <div className="flex rounded-md bg-slate-100 p-0.5 border border-slate-200 text-xs">
+            <button
+              type="button"
+              onClick={() => setFilterMode("all")}
+              className={`flex-1 py-1 text-[11px] font-bold rounded transition-colors cursor-pointer ${
+                filterMode === "all"
+                  ? "bg-white text-slate-900 shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              전체 거래처 ({historyList.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterMode("current")}
+              disabled={!cleanCurrentCompany}
+              className={`flex-1 py-1 text-[11px] font-bold rounded transition-colors cursor-pointer flex items-center justify-center gap-1 ${
+                filterMode === "current"
+                  ? "bg-[#FF7B00] text-white shadow-2xs"
+                  : cleanCurrentCompany
+                    ? "text-slate-700 hover:text-slate-900"
+                    : "text-slate-300 cursor-not-allowed"
+              }`}
+              title={
+                cleanCurrentCompany
+                  ? `[${cleanCurrentCompany}]의 주문 내역만 표시`
+                  : "발주서에 업체명을 입력하면 활성화됩니다"
+              }
+            >
+              <span>현재 업체만</span>
+              {cleanCurrentCompany && (
+                <span className="text-[9.5px] px-1 rounded bg-black/20">
+                  {currentCompanyCount}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Search Box */}
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="업체명, 담당자, 품목명, 발주번호 검색..."
+              className="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:border-[#FF7B00] focus:bg-white transition-colors"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* 4. History Cards List */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-[#F8FAFC] scrollbar-thin">
+          {filteredList.length === 0 ? (
+            <div className="py-12 px-4 text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+                <History className="w-6 h-6" />
+              </div>
+              <p className="text-xs font-bold text-slate-700">
+                {filterMode === "current" && cleanCurrentCompany
+                  ? `[${cleanCurrentCompany}]의 이전 주문 내역이 없습니다.`
+                  : "일치하는 주문 히스토리가 없습니다."}
+              </p>
+              {filterMode === "current" && (
+                <button
+                  type="button"
+                  onClick={() => setFilterMode("all")}
+                  className="px-3 py-1 rounded bg-white border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 cursor-pointer"
+                >
+                  전체 거래처 이력 보기
+                </button>
+              )}
+            </div>
+          ) : (
+            filteredList.map((order) => {
+              const isExpanded = expandedId === order.id;
+              const checkedIndices = selectedItemsMap[order.id] || [];
+
+              return (
+                <div
+                  key={order.id}
+                  className="bg-white rounded-lg border border-slate-200 shadow-2xs hover:shadow-md transition-all overflow-hidden"
+                >
+                  {/* Card Header: Date, OrderNumber, Favorite, Delete */}
+                  <div className="p-3 pb-2 border-b border-slate-100">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1">
+                      <span className="flex items-center gap-1 font-semibold">
+                        <Calendar className="w-3 h-3 text-slate-400" />
+                        {order.orderDate}
+                      </span>
+                      <span className="font-mono text-[10px] text-slate-400">
+                        {order.orderNumber}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleFav(order.id)}
+                          className={`p-1 rounded hover:bg-slate-100 cursor-pointer transition-colors ${
+                            order.isFavorite
+                              ? "text-amber-500"
+                              : "text-slate-300 hover:text-amber-400"
+                          }`}
+                          title={order.isFavorite ? "단골 주문 해제" : "★ 단골 주문 등록"}
+                        >
+                          <Star
+                            className={`w-3.5 h-3.5 ${
+                              order.isFavorite ? "fill-current" : ""
+                            }`}
+                          />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(order.id, order.orderNumber)}
+                          className="p-1 rounded text-slate-300 hover:text-red-500 hover:bg-red-50 cursor-pointer transition-colors"
+                          title="이력 삭제"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Company & Contact */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-xs font-black text-slate-900 truncate">
+                          {order.companyName}
+                        </span>
+                        {order.contactName && (
+                          <span className="text-[10px] text-slate-500 font-medium shrink-0">
+                            ({order.contactName})
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-sky-50 text-sky-800 border border-sky-200 shrink-0">
+                        총 {order.itemCount}품목 · {order.totalQuantity}개
+                      </span>
+                    </div>
+
+                    {/* Summary text */}
+                    <p className="text-[11px] text-slate-600 mt-1 line-clamp-2 leading-relaxed">
+                      {order.summary}
+                    </p>
+
+                    {/* Memo preview if any */}
+                    {order.memo && (
+                      <p className="text-[10px] text-slate-400 mt-1 truncate bg-slate-50 p-1 rounded">
+                        📝 {order.memo}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Expandable Line-Items Preview */}
+                  {isExpanded && (
+                    <div className="p-2.5 bg-slate-50/80 border-b border-slate-200 space-y-1.5 text-xs">
+                      <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 pb-1 border-b border-slate-200">
+                        <span>상세 품목 ({order.items.length}개)</span>
+                        <span>체크 후 선택 추가 가능</span>
+                      </div>
+
+                      <div className="max-h-[160px] overflow-y-auto space-y-1 scrollbar-thin">
+                        {order.items.map((it, idx) => {
+                          const isChecked = checkedIndices.includes(idx);
+                          return (
+                            <label
+                              key={idx}
+                              className={`flex items-start gap-2 p-1.5 rounded border text-[11px] cursor-pointer transition-colors ${
+                                isChecked
+                                  ? "bg-orange-50 border-orange-300 text-orange-950 font-semibold"
+                                  : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => handleToggleItemCheck(order.id, idx)}
+                                className="mt-0.5 rounded text-[#FF7B00] focus:ring-[#FF7B00]"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className="font-bold truncate">
+                                    {it.productName}
+                                  </span>
+                                  <span className="text-[10px] text-slate-600 shrink-0 font-mono">
+                                    {it.quantity} {it.unit}
+                                  </span>
+                                </div>
+                                {(it.spec || it.color || it.note) && (
+                                  <div className="text-[10px] text-slate-500 truncate">
+                                    {[it.spec, it.color, it.note]
+                                      .filter(Boolean)
+                                      .join(" · ")}
+                                  </div>
+                                )}
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+
+                      {/* Add Selected Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleAddSelected(order)}
+                        className="w-full py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <Plus className="w-3 h-3 text-[#FF7B00]" />
+                        <span>선택한 {checkedIndices.length}개 품목만 발주서에 추가</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Card Bottom Actions: Expand Toggle + Apply Full Order */}
+                  <div className="p-2 bg-slate-50/50 flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedId((prev) => (prev === order.id ? null : order.id))}
+                      className="px-2 py-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 flex items-center gap-0.5 cursor-pointer"
+                    >
+                      <span>품목 {order.items.length}건</span>
+                      {isExpanded ? (
+                        <ChevronUp className="w-3 h-3" />
+                      ) : (
+                        <ChevronDown className="w-3 h-3" />
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            `[${order.companyName} (${order.orderDate})] 주문 내용을 발주서에 적용하시겠습니까?\n기존 빈 품목이 해당 주문 품목으로 교체됩니다.`,
+                          )
+                        ) {
+                          onApplyFullOrder(order);
+                        }
+                      }}
+                      className="px-2.5 py-1 rounded bg-[#FF7B00] hover:bg-[#e66f00] text-white text-[11px] font-black flex items-center gap-1 cursor-pointer shadow-2xs transition-colors"
+                      title="이 주문의 모든 품목과 설정을 현재 발주서에 채웁니다"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>이 주문 전체 불러오기</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </aside>
+    </>
+  );
+}

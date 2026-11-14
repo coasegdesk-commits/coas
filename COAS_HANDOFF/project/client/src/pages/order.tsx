@@ -49,6 +49,7 @@ import {
   Check,
   ShieldCheck,
   Star,
+  History,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -76,10 +77,15 @@ import {
   type SavedBuyerProfile,
 } from "@/lib/order-draft";
 import { LayoutPresetManager } from "@/components/order/LayoutPresetManager";
+import { OrderHistoryDrawer } from "@/components/order/OrderHistoryDrawer";
 import {
   type OrderLayoutPreset,
   loadAllPresets,
 } from "@/lib/order-presets";
+import {
+  type OrderHistoryRecord,
+  addOrderHistoryRecord,
+} from "@/lib/order-history";
 import type {
   AdminAffinityAction,
   CmsProduct,
@@ -881,6 +887,114 @@ export default function OrderPage() {
     if (preset.zoomPct) {
       setZoomPct(preset.zoomPct);
     }
+  };
+
+  // Right Drawer: Customer Order History State & Handlers
+  const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
+
+  // 1. Apply Full Order from History to current order form
+  const handleApplyFullHistoryOrder = (order: OrderHistoryRecord) => {
+    if (order.companyName) setCompanyName(order.companyName);
+    if (order.contactName) setContactName(order.contactName);
+    if (order.phone) setPhone(order.phone);
+    if (order.email) setEmail(order.email);
+    if (order.deliveryAddress) setDeliveryAddress(order.deliveryAddress);
+    if (order.shippingMethod) setShippingMethod(order.shippingMethod);
+    if (order.desiredDate) setDesiredDate(order.desiredDate);
+    if (order.memo) setMemo(order.memo);
+
+    const importedRows = order.items.map((it) => createEmptyOrderRow(it));
+    const targetLength = Math.max(MIN_ORDER_ROW_COUNT, importedRows.length);
+    while (importedRows.length < targetLength) {
+      importedRows.push(createEmptyOrderRow());
+    }
+    setItems(importedRows);
+
+    toast({
+      title: `[${order.companyName}] 주문 내용이 적용되었습니다.`,
+      description: `총 ${order.items.length}개 품목 및 발주 정보가 입력되었습니다. 수량이나 품목을 자유롭게 수정해 주세요.`,
+    });
+  };
+
+  // 2. Add Selected Items from History to empty rows or append
+  const handleAddHistorySelectedItems = (toAdd: OrderLineItem[]) => {
+    setItems((prev) => {
+      const next = [...prev];
+      let addIdx = 0;
+
+      for (let i = 0; i < next.length && addIdx < toAdd.length; i++) {
+        const r = next[i];
+        const isEmpty =
+          !r.productId &&
+          !r.productName.trim() &&
+          !r.spec.trim() &&
+          !r.quantity.trim();
+        if (isEmpty) {
+          next[i] = createEmptyOrderRow(toAdd[addIdx]);
+          addIdx++;
+        }
+      }
+
+      while (addIdx < toAdd.length) {
+        next.push(createEmptyOrderRow(toAdd[addIdx]));
+        addIdx++;
+      }
+
+      return next;
+    });
+  };
+
+  // 3. Save Current Order Form as History Record
+  const handleSaveCurrentToHistory = () => {
+    const validItems = items.filter(
+      (r) => r.productId || r.productName.trim() || r.spec.trim(),
+    );
+    if (validItems.length === 0) {
+      toast({
+        title: "보관할 품목이 없습니다.",
+        description: "품목 명세 표에 1개 이상의 품목을 입력한 후 저장해 주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const company = companyName.trim() || "상호 미입력";
+    const totalQty = validItems.reduce(
+      (acc, it) => acc + (parseInt(it.quantity, 10) || 1),
+      0,
+    );
+    const summary =
+      validItems
+        .slice(0, 3)
+        .map((it) => `${it.productName || it.spec} ${it.quantity || 1}${it.unit || "EA"}`)
+        .join(", ") +
+      (validItems.length > 3 ? ` 외 ${validItems.length - 3}건` : "");
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const orderNum = `ORD-${todayStr.replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    addOrderHistoryRecord({
+      orderNumber: orderNum,
+      orderDate: todayStr,
+      companyName: company,
+      contactName: contactName.trim(),
+      phone: phone.trim(),
+      email: email.trim(),
+      deliveryAddress: deliveryAddress.trim(),
+      shippingMethod,
+      desiredDate,
+      memo: memo.trim(),
+      items: validItems,
+      itemCount: validItems.length,
+      totalQuantity: totalQty,
+      summary,
+      isFavorite: false,
+    });
+
+    toast({
+      title: "현재 발주서가 거래처 히스토리에 보관되었습니다.",
+      description: `[${company}] ${validItems.length}개 품목 보관 완료`,
+    });
   };
 
   const handleSaveDefaultPrefs = () => {
@@ -2650,6 +2764,43 @@ export default function OrderPage() {
       clearOrderDraft(false);
       setRecTrayOpen(false);
       closeZoomPopup();
+      // Automatically archive submitted order into Customer Order History
+      const submittedValidItems = items.filter(
+        (r) => r.productId || r.productName.trim() || r.spec.trim(),
+      );
+      if (submittedValidItems.length > 0) {
+        addOrderHistoryRecord({
+          orderNumber: data.orderNumber,
+          orderDate: new Date().toISOString().slice(0, 10),
+          companyName: companyName.trim() || "상호 미입력",
+          contactName: contactName.trim(),
+          phone: phone.trim(),
+          email: email.trim(),
+          deliveryAddress: deliveryAddress.trim(),
+          shippingMethod,
+          desiredDate,
+          memo: memo.trim(),
+          items: submittedValidItems,
+          itemCount: submittedValidItems.length,
+          totalQuantity: submittedValidItems.reduce(
+            (acc, it) => acc + (parseInt(it.quantity, 10) || 1),
+            0,
+          ),
+          summary:
+            submittedValidItems
+              .slice(0, 3)
+              .map(
+                (it) =>
+                  `${it.productName || it.spec} ${it.quantity || 1}${it.unit || "EA"}`,
+              )
+              .join(", ") +
+            (submittedValidItems.length > 3
+              ? ` 외 ${submittedValidItems.length - 3}건`
+              : ""),
+          isFavorite: false,
+        });
+      }
+
       setSubmittedOrderNumber(data.orderNumber);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err: any) {
@@ -3203,6 +3354,21 @@ export default function OrderPage() {
               {drawerOpen ? "◀ 부품창 닫기" : "▶ 부품 빠른담기"}
             </button>
 
+            {/* Quick Toggle for Right-Edge 거래처 히스토리 Drawer */}
+            <button
+              type="button"
+              onClick={() => setHistoryDrawerOpen((o) => !o)}
+              className={`px-2 py-1 rounded border text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shrink-0 ${
+                historyDrawerOpen
+                  ? "border-[#FF7B00] bg-orange-600 text-white"
+                  : "border-slate-600 bg-slate-700 hover:bg-slate-600 text-white"
+              }`}
+              title="거래처별 과거 발주 이력을 확인하고 발주서에 불러옵니다"
+            >
+              <History className="w-3.5 h-3.5 text-orange-300" />
+              <span>거래처 히스토리</span>
+            </button>
+
             <div className="h-3.5 w-[1px] bg-slate-600 mx-0.5 shrink-0" />
 
             <button
@@ -3533,6 +3699,22 @@ export default function OrderPage() {
             </p>
           </div>
         </aside>
+      )}
+
+      {/* =====================================================================
+          RIGHT SLIDING CUSTOMER ORDER HISTORY DRAWER
+          Matches left catalog drawer style with always-visible orange tab!
+         ===================================================================== */}
+      {!submittedOrderNumber && (
+        <OrderHistoryDrawer
+          isOpen={historyDrawerOpen}
+          onToggle={() => setHistoryDrawerOpen((o) => !o)}
+          onClose={() => setHistoryDrawerOpen(false)}
+          currentCompanyName={companyName}
+          onApplyFullOrder={handleApplyFullHistoryOrder}
+          onAddSelectedItems={handleAddHistorySelectedItems}
+          onSaveCurrentAsHistory={handleSaveCurrentToHistory}
+        />
       )}
 
       {/* =====================================================================
