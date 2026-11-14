@@ -488,21 +488,23 @@ export default function OrderPage() {
     string | null
   >(null);
 
-  // A4 Page Row Preset (Minimum 15 rows): "15" | "20" | "25" | "30" | "custom"
-  const [a4Preset, setA4Preset] = useState<"15" | "20" | "25" | "30" | "custom">(
-    () => {
-      const len = Math.max(MIN_ORDER_ROW_COUNT, initialDraft.items.length);
-      if (len === 15) return "15";
-      if (len === 20) return "20";
-      if (len === 25) return "25";
-      if (len === 30) return "30";
-      return "custom";
-    },
-  );
+  // A4 Page Row Preset (Minimum 10 rows): "10" | "15" | "20" | "25" | "30" | "custom"
+  const [a4Preset, setA4Preset] = useState<
+    "10" | "15" | "20" | "25" | "30" | "custom"
+  >(() => {
+    const len = Math.max(MIN_ORDER_ROW_COUNT, initialDraft.items.length);
+    if (len === 10) return "10";
+    if (len === 15) return "15";
+    if (len === 20) return "20";
+    if (len === 25) return "25";
+    if (len === 30) return "30";
+    return "custom";
+  });
 
   useEffect(() => {
     setRowCountDraft(String(items.length));
-    if (items.length === 15) setA4Preset("15");
+    if (items.length === 10) setA4Preset("10");
+    else if (items.length === 15) setA4Preset("15");
     else if (items.length === 20) setA4Preset("20");
     else if (items.length === 25) setA4Preset("25");
     else if (items.length === 30) setA4Preset("30");
@@ -1842,10 +1844,10 @@ export default function OrderPage() {
     }
   };
 
-  // Enforce minimum 15 rows when adjusting row count directly or via presets
+  // Enforce minimum rows when adjusting row count directly or via presets
   const setTargetRowCount = (
     rawCount: number,
-    presetHint?: "15" | "20" | "25" | "30" | "custom",
+    presetHint?: "10" | "15" | "20" | "25" | "30" | "custom",
   ) => {
     if (Number.isNaN(rawCount)) return;
     const clamped = Math.max(MIN_ORDER_ROW_COUNT, Math.min(200, Math.round(rawCount)));
@@ -1880,9 +1882,9 @@ export default function OrderPage() {
     }
   };
 
-  // Apply A4 Paper Row Count Preset (Minimum 15 rows)
+  // Apply A4 Paper Row Count Preset (Minimum 10 rows)
   const handleApplyA4Preset = (
-    preset: "15" | "20" | "25" | "30" | "custom",
+    preset: "10" | "15" | "20" | "25" | "30" | "custom",
     customCount?: number,
   ) => {
     const targetCount =
@@ -2974,7 +2976,7 @@ export default function OrderPage() {
                       표 행 수
                     </span>
                     <div className="flex items-center gap-1 flex-1 flex-wrap">
-                      {(["15", "20", "25", "30"] as const).map((preset) => (
+                      {(["10", "15", "20", "25", "30"] as const).map((preset) => (
                         <button
                           key={preset}
                           type="button"
@@ -2985,13 +2987,15 @@ export default function OrderPage() {
                               : "bg-white border-slate-300 text-slate-700 hover:bg-slate-50"
                           }`}
                         >
-                          {preset === "20"
-                            ? "20행(기본)"
-                            : preset === "15"
-                              ? "15행"
-                              : preset === "25" && orientation === "portrait"
-                                ? "25행(1장최대)"
-                                : `${preset}행`}
+                          {preset === "10"
+                            ? "10행(메모확대)"
+                            : preset === "20"
+                              ? "20행(기본)"
+                              : preset === "15"
+                                ? "15행"
+                                : preset === "25" && orientation === "portrait"
+                                  ? "25행(1장최대)"
+                                  : `${preset}행`}
                         </button>
                       ))}
                       <button
@@ -5764,7 +5768,7 @@ export default function OrderPage() {
                                     <span>행 수: {items.length}행</span>
                                     <span className="text-blue-200 text-[9px] font-normal">
                                       ({items.length <= MIN_ORDER_ROW_COUNT
-                                        ? "최소 15행"
+                                        ? `최소 ${MIN_ORDER_ROW_COUNT}행`
                                         : items.length >= (orientation === "landscape" ? 20 : 25)
                                           ? "최대"
                                           : "조절 중"})

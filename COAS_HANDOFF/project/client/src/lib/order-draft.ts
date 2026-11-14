@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { OrderAttachment, OrderLineItem } from "@shared/cms-types";
 
-export const MIN_ORDER_ROW_COUNT = 15;
+export const MIN_ORDER_ROW_COUNT = 10;
 export const INITIAL_ORDER_ROW_COUNT = 20;
 const STORAGE_KEY = "coas_order_draft_v1";
 const CHANGE_EVENT = "coas-order-draft-change";
