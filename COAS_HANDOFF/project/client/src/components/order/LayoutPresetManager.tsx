@@ -86,13 +86,13 @@ export function LayoutPresetManager({
       toast({
         title: "저장 한도 도달 (최대 20개)",
         description:
-          "커스텀 양식은 최대 20개까지 저장할 수 있습니다. 기존 양식을 삭제한 후 다시 시도해 주세요.",
+          "커스텀 용지설정은 최대 20개까지 저장할 수 있습니다. 기존 설정을 삭제한 후 다시 시도해 주세요.",
         variant: "destructive",
       });
       return;
     }
 
-    const defaultName = `내 양식 ${customCount + 1} (${
+    const defaultName = `내 용지설정 ${customCount + 1} (${
       currentSettings.orientation === "landscape" ? "가로" : "세로"
     } ${currentSettings.rowCount}행)`;
     const finalName = newPresetName.trim() || defaultName;
@@ -121,7 +121,7 @@ export function LayoutPresetManager({
     setShowSaveInput(false);
 
     toast({
-      title: "새 양식이 저장되었습니다.",
+      title: "새 용지설정이 저장되었습니다.",
       description: `"${finalName}" (최대 20개 중 ${nextCustoms.length}개 보관)`,
     });
 
@@ -134,7 +134,7 @@ export function LayoutPresetManager({
     saveCustomPresets(nextCustoms);
     setPresets(loadAllPresets());
     toast({
-      title: "양식이 삭제되었습니다.",
+      title: "용지설정이 삭제되었습니다.",
       description: `"${name}"이 보관함에서 제거되었습니다.`,
     });
   };
@@ -144,7 +144,7 @@ export function LayoutPresetManager({
     setDefaultPresetId(id);
     setPresets(loadAllPresets());
     toast({
-      title: "기본 양식이 지정되었습니다.",
+      title: "기본 용지설정이 지정되었습니다.",
       description: `앞으로 발주서 접속 시 "${name}"이 기본으로 적용됩니다.`,
     });
   };
@@ -156,7 +156,7 @@ export function LayoutPresetManager({
         <div className="flex items-center gap-1.5">
           <Layout className="w-3.5 h-3.5 text-[#FF7B00]" />
           <span className="text-[12px] font-black text-slate-800">
-            발주서 양식 프리셋
+            용지설정 보관함
           </span>
           <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 border border-slate-200">
             내 저장 {customCount}/{MAX_CUSTOM_PRESETS}개
@@ -171,10 +171,10 @@ export function LayoutPresetManager({
               ? "bg-orange-50 border-[#FF7B00] text-[#FF7B00]"
               : "bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200"
           }`}
-          title="현재 설정(행 수, 방향, 높이)을 새 양식으로 저장"
+          title="현재 설정(행 수, 방향, 높이)을 새 용지설정으로 저장"
         >
           <Plus className="w-3 h-3 text-[#FF7B00]" />
-          <span>현재 설정 저장</span>
+          <span>현재 용지설정 저장</span>
         </button>
       </div>
 
@@ -188,7 +188,7 @@ export function LayoutPresetManager({
             type="text"
             value={newPresetName}
             onChange={(e) => setNewPresetName(e.target.value)}
-            placeholder={`양식 이름 (예: ${currentSettings.rowCount}행 ${
+            placeholder={`용지설정 이름 (예: ${currentSettings.rowCount}행 ${
               currentSettings.orientation === "landscape" ? "가로" : "세로"
             } 맞춤형)`}
             className="flex-1 px-2.5 py-1 text-[11px] font-semibold bg-white border border-slate-300 rounded focus:outline-none focus:border-[#FF7B00]"
@@ -325,7 +325,7 @@ export function LayoutPresetManager({
       {/* 3. 5-Item Height Pulldown Menu with Scrollbar */}
       <div ref={dropdownRef} className="relative">
         <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 mb-1">
-          <span>풀다운 양식 보관함 (5개 표시 스크롤)</span>
+          <span>저장된 용지설정 (5개 스크롤)</span>
           {matchedPreset && (
             <span className="text-[#FF7B00] font-black">
               현재: {matchedPreset.name}
@@ -346,7 +346,7 @@ export function LayoutPresetManager({
           <div className="flex items-center gap-2 truncate">
             <BookmarkCheck className="w-3.5 h-3.5 text-[#FF7B00] shrink-0" />
             <span className="text-[11px] font-bold truncate">
-              {matchedPreset ? matchedPreset.name : "양식을 선택하세요"}
+              {matchedPreset ? matchedPreset.name : "용지설정을 선택하세요"}
             </span>
             {matchedPreset && (
               <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-semibold shrink-0">
@@ -402,8 +402,8 @@ export function LayoutPresetManager({
                         }`}
                         title={
                           preset.isDefault
-                            ? "현재 기본 접속 양식입니다"
-                            : "이 양식을 기본 접속 양식으로 지정 (★)"
+                            ? "현재 기본 접속 용지설정입니다"
+                            : "이 설정을 기본 접속 용지설정으로 지정 (★)"
                         }
                       >
                         <Star
@@ -466,7 +466,7 @@ export function LayoutPresetManager({
                             handleDeletePreset(preset.id, preset.name)
                           }
                           className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                          title="양식 삭제"
+                          title="용지설정 삭제"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
@@ -490,7 +490,7 @@ export function LayoutPresetManager({
                 }}
                 className="text-[#FF7B00] hover:underline font-bold cursor-pointer"
               >
-                + 현재 설정 새 양식 등록
+                + 현재 용지설정 새로 등록
               </button>
             </div>
           </div>

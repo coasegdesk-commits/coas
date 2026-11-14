@@ -2908,15 +2908,18 @@ export default function OrderPage() {
               type="button"
               onClick={() => setLayoutPopoverOpen((o) => !o)}
               data-testid="button-layout-popover"
-              className={`px-2 py-1 rounded border text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shrink-0 ${
+              className={`px-2.5 py-1 rounded border text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
                 layoutPopoverOpen
                   ? "border-[#FF7B00] bg-slate-700 text-white"
                   : "border-sky-400/60 bg-slate-900 hover:bg-slate-700 text-sky-100"
               }`}
-              title="용지 상세 설정, 행 프리셋, 열 폭 정렬 및 내보내기"
+              title="용지설정, 행 프리셋, 열 폭 정렬 및 내보내기"
             >
               <SlidersHorizontal className="w-3.5 h-3.5 text-sky-300" />
-              <span>총 {estimatedPages}장 설정</span>
+              <span>용지설정</span>
+              <span className="text-[10px] text-sky-300 font-semibold px-1 py-0.2 rounded bg-sky-950/60 border border-sky-400/40">
+                총 {estimatedPages}장
+              </span>
               <ChevronDown
                 className={`w-3 h-3 text-slate-400 transition-transform ${
                   layoutPopoverOpen ? "rotate-180" : ""
