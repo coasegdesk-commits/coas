@@ -372,3 +372,43 @@ export interface B2BAuthLog {
   status: "success" | "fail";
   loggedAt: string;
 }
+
+export interface StockAdjustmentLog {
+  id: string;
+  type: "inbound" | "outbound" | "adjustment";
+  quantity: number; // 변동 수량 (입고 시 +, 출고/폐기 시 -, 조정 시 변경 차이)
+  previousStock: number;
+  newStock: number;
+  reason: string; // 예: "신규 공장 입고", "발주 출고", "파손 폐기", "정기 재고실사 차이조정"
+  operator: string; // 담당자명 (예: "물류팀장", "시스템자동")
+  timestamp: string;
+}
+
+export interface InventoryItem {
+  id: string;
+  sku: string; // 바코드/관리코드 (예: "COAS-SL-060")
+  productName: string; // 제품명 (예: "60kg(SD)")
+  category: string; // 슬라이딩, 댐퍼, 원바디, 유리, 레일/부속 등
+  spec: string; // 규격 (예: "목문용 상부 롤러 세트")
+  unit: string; // 단위 (SET, EA, M 등)
+  currentStock: number; // 현재 실재고 수량
+  safetyStock: number; // 적정/안전 재고 수량
+  incomingStock: number; // 입고 예정 수량
+  outgoingStock: number; // 출고 대기 수량
+  unitCost: number; // 매입 원가 (원)
+  sellingPrice: number; // 공급 단가 (원)
+  warehouseLocation: string; // 적치 위치 (예: "A동 1열-03")
+  status: "in_stock" | "low_stock" | "out_of_stock"; // 정상, 안전재고미달(위험), 품절
+  lastStockUpdated: string; // 최근 변동 일시
+  history: StockAdjustmentLog[];
+}
+
+export interface InventorySummary {
+  totalItems: number;
+  inStockCount: number;
+  lowStockCount: number;
+  outOfStockCount: number;
+  totalAssetValuation: number; // 총 재고 평가액 (currentStock * unitCost)
+  items: InventoryItem[];
+}
+

@@ -15,6 +15,7 @@ import {
 import { partAffinityStore } from "./part-affinity";
 import { b2bStore } from "./b2b-store";
 import { manualsStore } from "./manuals-store";
+import { inventoryStore } from "./inventory-store";
 import {
   getDailyDispatchSummary,
   getAccountRevenueBreakdown,
@@ -1045,6 +1046,109 @@ export async function registerRoutes(
       });
     } catch (err: any) {
       res.status(400).json({ error: err.message });
+    }
+  });
+
+  // ============================================
+  // Inventory / Stock Management Endpoints
+  // ============================================
+
+  // Get inventory items and KPI summary
+  app.get("/api/admin/inventory", requireAdmin, (_req, res) => {
+    try {
+      const summary = inventoryStore.getSummary();
+      res.json(summary);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "재고 목록 조회 실패" });
+    }
+  });
+
+  // Create or add new inventory item
+  app.post("/api/admin/inventory", requireAdmin, (req, res) => {
+    try {
+      const { productName, sku, category, spec, unit, currentStock, safetyStock, unitCost, sellingPrice, warehouseLocation } = req.body;
+      if (!productName || typeof productName !== "string") {
+        return res.status(400).json({ error: "제품명은 필수 항목입니다." });
+      }
+
+      const item = inventoryStore.upsert({
+        productName: productName.trim(),
+        sku: (sku || "").trim(),
+        category: category || "슬라이딩 시스템",
+        spec: spec || "",
+        unit: unit || "SET",
+        currentStock: Number(currentStock) || 0,
+        safetyStock: Number(safetyStock) || 10,
+        unitCost: Number(unitCost) || 0,
+        sellingPrice: Number(sellingPrice) || 0,
+        warehouseLocation: warehouseLocation || "A동 1열",
+      });
+
+      res.status(201).json({ success: true, item });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "재고 품목 등록 실패" });
+    }
+  });
+
+  // Update inventory item metadata / safety stock / location
+  app.patch("/api/admin/inventory/:id", requireAdmin, (req, res) => {
+    try {
+      const { id } = req.params;
+      const existing = inventoryStore.getById(id);
+      if (!existing) {
+        return res.status(404).json({ error: "해당 재고 품목을 찾을 수 없습니다." });
+      }
+
+      const updated = inventoryStore.upsert({
+        ...req.body,
+        id,
+        productName: req.body.productName || existing.productName,
+      });
+
+      res.json({ success: true, item: updated });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "재고 품목 수정 실패" });
+    }
+  });
+
+  // Stock adjustment: Inbound (+), Outbound (-), or Physical count Audit
+  app.post("/api/admin/inventory/:id/adjust", requireAdmin, (req, res) => {
+    try {
+      const { id } = req.params;
+      const { type, quantity, reason, operator } = req.body;
+
+      if (!type || !["inbound", "outbound", "adjustment"].includes(type)) {
+        return res.status(400).json({ error: "유효한 조정 구분(inbound, outbound, adjustment)이 필요합니다." });
+      }
+
+      if (typeof quantity !== "number" || isNaN(quantity)) {
+        return res.status(400).json({ error: "유효한 수량을 입력해주세요." });
+      }
+
+      const updated = inventoryStore.adjustStock(id, {
+        type,
+        quantity,
+        reason: reason || "",
+        operator: operator || "관리자",
+      });
+
+      res.json({ success: true, item: updated });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message || "재고 조정 처리 실패" });
+    }
+  });
+
+  // Delete inventory item
+  app.delete("/api/admin/inventory/:id", requireAdmin, (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = inventoryStore.delete(id);
+      if (!success) {
+        return res.status(404).json({ error: "해당 재고 품목이 존재하지 않습니다." });
+      }
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "재고 품목 삭제 실패" });
     }
   });
 

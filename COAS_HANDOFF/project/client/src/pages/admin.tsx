@@ -31,6 +31,7 @@ import { AdminB2BAccountsTab } from "@/components/admin/admin-b2b-accounts-tab";
 import { AdminDispatchTab } from "@/components/admin/admin-dispatch-tab";
 import { AdminRevenueStatsTab } from "@/components/admin/admin-revenue-stats-tab";
 import { AdminManualsTab } from "@/components/admin/admin-manuals-tab";
+import { AdminInventoryTab } from "@/components/admin/admin-inventory-tab";
 import type {
   CatalogRequestRecord,
   CmsProduct,
@@ -63,6 +64,7 @@ import {
   Building2,
   Truck,
   BarChart3,
+  PackageSearch,
 } from "lucide-react";
 
 interface AdminOverviewData {
@@ -82,6 +84,7 @@ interface AdminOverviewData {
 
 type AdminTabId =
   | "overview"
+  | "inventory"
   | "dispatch"
   | "revenue-stats"
   | "manuals"
@@ -392,6 +395,7 @@ export default function AdminPage() {
     badge?: number;
   }[] = [
     { id: "overview", label: "대시보드 요약", icon: LayoutDashboard },
+    { id: "inventory", label: "재고 관리 · 물류 현황", icon: PackageSearch },
     { id: "dispatch", label: "일일 출고장 · 배송 관리", icon: Truck },
     { id: "revenue-stats", label: "매출 통계 · 경영 분석", icon: BarChart3 },
     { id: "manuals", label: "사용설명서 · 시공가이드", icon: BookOpen },
@@ -564,7 +568,7 @@ export default function AdminPage() {
           {activeTab === "overview" && (
             <div className="space-y-6">
               {/* Summary Metrics */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                 <Card
                   onClick={() => setActiveTab("submissions")}
                   className="cursor-pointer hover:border-[#FF7B00] transition-colors"
@@ -613,7 +617,7 @@ export default function AdminPage() {
                 >
                   <CardContent className="p-5">
                     <p className="text-xs font-medium text-gray-500">
-                      카탈로그 리드 수집
+                      카탈로그 리드
                     </p>
                     <div className="flex items-baseline justify-between mt-2">
                       <span className="text-2xl font-bold text-gray-900">
@@ -624,6 +628,23 @@ export default function AdminPage() {
                           신규 {unreadCatalogs}
                         </Badge>
                       )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card
+                  onClick={() => setActiveTab("inventory")}
+                  className="cursor-pointer hover:border-orange-500 bg-orange-50/20 border-orange-200 transition-colors"
+                >
+                  <CardContent className="p-5">
+                    <p className="text-xs font-medium text-orange-700">
+                      재고 · 물류 현황
+                    </p>
+                    <div className="flex items-baseline justify-between mt-2">
+                      <span className="text-2xl font-bold text-orange-600">
+                        실시간
+                      </span>
+                      <PackageSearch className="w-5 h-5 text-orange-500" />
                     </div>
                   </CardContent>
                 </Card>
@@ -806,6 +827,10 @@ export default function AdminPage() {
               learnedOrderIds={data.affinity?.learnedOrderIds || []}
               onSaved={loadOverview}
             />
+          )}
+
+          {activeTab === "inventory" && (
+            <AdminInventoryTab />
           )}
 
           {activeTab === "dispatch" && (
