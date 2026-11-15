@@ -648,14 +648,16 @@ export default function AdminPage() {
             </div>
           </aside>
 
-          {/* Single Center Slide Tab Handle (사이드바 우측 경계선 중앙에 밀착, 열림/닫힘 시 수평으로 함께 이동) */}
+          {/* Single Center Slide Tab Handle (펼침 상태: 테두리 삭제 & 좌측 카드 내부로 이동 / 접힘 상태: 기존 형태 유지) */}
           <button
             type="button"
             onClick={toggleSidebar}
             data-testid="button-sidebar-center-grip-tab"
             title={isSidebarOpen ? "사이드바 메뉴 접기 (클릭)" : "사이드바 메뉴 펼치기 (클릭)"}
-            className={`hidden lg:flex w-4.5 h-16 bg-white hover:bg-orange-50 text-slate-500 hover:text-[#FF7B00] border border-gray-300 hover:border-[#FF7B00] rounded-r-md shadow-xs flex-col items-center justify-between py-1.5 cursor-pointer transition-all group select-none shrink-0 z-30 ${
-              isSidebarOpen ? "-ml-2 border-l-0" : "border-l-0"
+            className={`hidden lg:flex w-[18px] h-16 flex-col items-center justify-between py-1.5 cursor-pointer transition-all group select-none shrink-0 z-30 ${
+              isSidebarOpen
+                ? "-ml-[22px] border-0 shadow-none bg-transparent hover:bg-slate-100 text-slate-400 hover:text-[#FF7B00] rounded-md"
+                : "border border-l-0 border-gray-300 hover:border-[#FF7B00] bg-white hover:bg-orange-50 text-slate-500 hover:text-[#FF7B00] rounded-r-md shadow-xs"
             }`}
           >
             {/* 상단 < 화살표 */}
@@ -666,7 +668,11 @@ export default function AdminPage() {
             />
 
             {/* 중간 6점 도트 포인트 */}
-            <GripVertical className="w-3.5 h-3.5 text-slate-600 group-hover:text-[#FF7B00] transition-colors" />
+            <GripVertical
+              className={`w-3.5 h-3.5 transition-colors ${
+                isSidebarOpen ? "text-slate-400 group-hover:text-[#FF7B00]" : "text-slate-600 group-hover:text-[#FF7B00]"
+              }`}
+            />
 
             {/* 하단 > 화살표 */}
             <ChevronRight
