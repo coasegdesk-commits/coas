@@ -5159,8 +5159,8 @@ export default function OrderPage() {
                                       style={{
                                         fontSize:
                                           orientation === "landscape"
-                                            ? "20px"
-                                            : "24px",
+                                            ? "25px"
+                                            : "30px",
                                         letterSpacing: "0.48em",
                                       }}
                                       className="font-black text-slate-900 leading-none pl-[0.48em]"
