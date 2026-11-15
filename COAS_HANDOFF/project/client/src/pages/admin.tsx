@@ -575,108 +575,107 @@ export default function AdminPage() {
         </div>
       </header>
 
-      {/* Main Workspace (Full Width & Collapsible Sidebar with Swing Tab) */}
+      {/* Main Workspace (Full Width & Horizontal Slide Drawer with Single Center Tab) */}
       <div className="w-full pl-2 sm:pl-3 lg:pl-3 pr-2 sm:pr-3 lg:pr-4 py-3 sm:py-4 flex-1 flex flex-col lg:flex-row gap-3.5 lg:gap-4 min-w-0 items-start">
-        {/* Left Navigation Sidebar / Slide Tab */}
-        {isSidebarOpen ? (
-          <aside className="w-full lg:w-64 shrink-0 transition-all duration-300 relative select-none">
-            <nav className="bg-white rounded-xl border border-gray-200 p-2 shadow-sm flex lg:flex-col gap-1 overflow-hidden">
-              {/* Sidebar Header with Collapse Button */}
-              <div className="hidden lg:flex items-center justify-between px-2.5 py-1.5 mb-1 border-b border-gray-100">
-                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                  관리자 메뉴 목록
-                </span>
-                <button
-                  type="button"
-                  onClick={toggleSidebar}
-                  title="관리자 메뉴 접기 (좌측 탭으로 축소)"
-                  className="flex items-center gap-1 text-[11px] font-medium text-gray-400 hover:text-[#FF7B00] hover:bg-orange-50 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
-                >
-                  <span>접기</span>
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.id;
-                return (
+        {/* Left Navigation Sidebar Wrapper (Horizontal Slide Drawer) */}
+        <div className="relative shrink-0 flex items-center select-none z-20 self-start">
+          {/* Collapsible Sidebar Body (좌측에서 우측으로 수평 슬라이딩 돌출) */}
+          <aside
+            className={`transition-all duration-300 ease-in-out overflow-hidden ${
+              isSidebarOpen
+                ? "w-64 opacity-100"
+                : "w-0 opacity-0 pointer-events-none"
+            }`}
+          >
+            <div className="w-64">
+              <nav className="bg-white rounded-xl border border-gray-200 p-2 shadow-sm flex lg:flex-col gap-1 overflow-hidden">
+                {/* Sidebar Header with Collapse Button */}
+                <div className="hidden lg:flex items-center justify-between px-2.5 py-1.5 mb-1 border-b border-gray-100">
+                  <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                    관리자 메뉴 목록
+                  </span>
                   <button
-                    key={item.id}
                     type="button"
-                    onClick={() => setActiveTab(item.id)}
-                    className={`flex items-center justify-between gap-2 px-3.5 py-3 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
-                      isActive
-                        ? "bg-[#FF7B00] text-white shadow-sm"
-                        : "text-gray-700 hover:bg-gray-100"
-                    }`}
+                    onClick={toggleSidebar}
+                    title="관리자 메뉴 접기 (좌측 탭으로 축소)"
+                    className="flex items-center gap-1 text-[11px] font-medium text-gray-400 hover:text-[#FF7B00] hover:bg-orange-50 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
                   >
-                    <span className="flex items-center gap-2.5">
-                      <Icon className="w-4 h-4 shrink-0" />
-                      {item.label}
-                    </span>
-                    {item.badge !== undefined && item.badge > 0 && (
-                      <span
-                        className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                          isActive
-                            ? "bg-white text-[#FF7B00]"
-                            : "bg-red-500 text-white"
-                        }`}
-                      >
-                        {item.badge}
-                      </span>
-                    )}
+                    <span>접기</span>
+                    <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
-                );
-              })}
-            </nav>
+                </div>
 
-            {/* Single Center Slide Tab Handle (첨부 이미지와 100% 동일한 < 6점 > 슬라이드탭, 사이드바 우측 경계선 중앙) */}
-            <button
-              type="button"
-              onClick={toggleSidebar}
-              data-testid="button-sidebar-center-grip-tab"
-              title="사이드바 메뉴 접기 / 닫기 (클릭)"
-              className="hidden lg:flex absolute -right-2 top-1/2 -translate-y-1/2 z-30 w-4.5 h-16 bg-white hover:bg-orange-50 text-slate-500 hover:text-[#FF7B00] border border-gray-300 hover:border-[#FF7B00] rounded-md shadow-xs flex-col items-center justify-between py-1.5 cursor-pointer transition-all group select-none"
-            >
-              {/* 상단 < 화살표 */}
-              <ChevronLeft className="w-3 h-3 text-slate-400 group-hover:text-[#FF7B00] transition-colors" />
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setActiveTab(item.id)}
+                      className={`flex items-center justify-between gap-2 px-3.5 py-3 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
+                        isActive
+                          ? "bg-[#FF7B00] text-white shadow-sm"
+                          : "text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <Icon className="w-4 h-4 shrink-0" />
+                        {item.label}
+                      </span>
+                      {item.badge !== undefined && item.badge > 0 && (
+                        <span
+                          className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                            isActive
+                              ? "bg-white text-[#FF7B00]"
+                              : "bg-red-500 text-white"
+                          }`}
+                        >
+                          {item.badge}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </nav>
 
-              {/* 중간 6점 도트 포인트 */}
-              <GripVertical className="w-3.5 h-3.5 text-slate-600 group-hover:text-[#FF7B00] transition-colors" />
-
-              {/* 하단 > 화살표 */}
-              <ChevronRight className="w-3 h-3 text-slate-400 group-hover:text-[#FF7B00] transition-colors" />
-            </button>
-
-            {loadingData && (
-              <div className="mt-3 flex items-center justify-center gap-2 text-xs text-gray-500 py-2">
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#FF7B00]" />
-                동기화 중...
-              </div>
-            )}
+              {loadingData && (
+                <div className="mt-3 flex items-center justify-center gap-2 text-xs text-gray-500 py-2">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#FF7B00]" />
+                  동기화 중...
+                </div>
+              )}
+            </div>
           </aside>
-        ) : (
-          /* Collapsed State: Left Edge Single Center Slide Tab (첨부 이미지 < 6점 > 탭 단독으로 심플하게 유지) */
-          <aside className="shrink-0 sticky top-1/2 -translate-y-1/2 z-20 self-start select-none">
-            <button
-              type="button"
-              onClick={toggleSidebar}
-              data-testid="button-sidebar-center-grip-expand"
-              title="사이드바 메뉴 펼치기 / 열기 (클릭)"
-              className="w-4.5 h-16 bg-white hover:bg-orange-50 text-slate-500 hover:text-[#FF7B00] border border-l-0 border-gray-300 hover:border-[#FF7B00] rounded-r-md shadow-md flex flex-col items-center justify-between py-1.5 cursor-pointer transition-all group select-none"
-            >
-              {/* 상단 < 화살표 */}
-              <ChevronLeft className="w-3 h-3 text-slate-400 group-hover:text-[#FF7B00] transition-colors" />
 
-              {/* 중간 6점 도트 포인트 */}
-              <GripVertical className="w-3.5 h-3.5 text-slate-600 group-hover:text-[#FF7B00] transition-colors" />
+          {/* Single Center Slide Tab Handle (사이드바 우측 경계선 중앙에 밀착, 열림/닫힘 시 수평으로 함께 이동) */}
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            data-testid="button-sidebar-center-grip-tab"
+            title={isSidebarOpen ? "사이드바 메뉴 접기 (클릭)" : "사이드바 메뉴 펼치기 (클릭)"}
+            className={`hidden lg:flex w-4.5 h-16 bg-white hover:bg-orange-50 text-slate-500 hover:text-[#FF7B00] border border-gray-300 hover:border-[#FF7B00] rounded-r-md shadow-xs flex-col items-center justify-between py-1.5 cursor-pointer transition-all group select-none shrink-0 z-30 ${
+              isSidebarOpen ? "-ml-2 border-l-0" : "border-l-0"
+            }`}
+          >
+            {/* 상단 < 화살표 */}
+            <ChevronLeft
+              className={`w-3 h-3 text-slate-400 group-hover:text-[#FF7B00] transition-transform ${
+                isSidebarOpen ? "" : "rotate-180 text-orange-500"
+              }`}
+            />
 
-              {/* 하단 > 화살표 */}
-              <ChevronRight className="w-3 h-3 text-slate-400 group-hover:text-[#FF7B00] transition-colors" />
-            </button>
-          </aside>
-        )}
+            {/* 중간 6점 도트 포인트 */}
+            <GripVertical className="w-3.5 h-3.5 text-slate-600 group-hover:text-[#FF7B00] transition-colors" />
+
+            {/* 하단 > 화살표 */}
+            <ChevronRight
+              className={`w-3 h-3 text-slate-400 group-hover:text-[#FF7B00] transition-transform ${
+                isSidebarOpen ? "" : "rotate-180 text-orange-500"
+              }`}
+            />
+          </button>
+        </div>
 
         {/* Right Content Area */}
         <main className="flex-1 min-w-0">
