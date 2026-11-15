@@ -65,6 +65,10 @@ import {
   Truck,
   BarChart3,
   PackageSearch,
+  ChevronLeft,
+  ChevronRight,
+  PanelLeft,
+  PanelLeftClose,
 } from "lucide-react";
 
 interface AdminOverviewData {
@@ -109,6 +113,26 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<AdminTabId>("overview");
   const [data, setData] = useState<AdminOverviewData | null>(null);
   const [loadingData, setLoadingData] = useState(false);
+
+  // Collapsible sidebar state (persisted to localStorage)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    try {
+      const saved = localStorage.getItem("coas_admin_sidebar_open");
+      return saved !== null ? saved === "true" : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("coas_admin_sidebar_open", String(next));
+      } catch {}
+      return next;
+    });
+  };
 
   // Change password modal
   const [pwModalOpen, setPwModalOpen] = useState(false);
@@ -427,7 +451,19 @@ export default function AdminPage() {
       {/* Top Admin Header */}
       <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30">
         <div className="w-full px-2 sm:px-3 lg:px-4 h-16 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              title={isSidebarOpen ? "사이드바 메뉴 접기" : "사이드바 메뉴 펼치기"}
+              className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              {isSidebarOpen ? (
+                <PanelLeftClose className="w-5 h-5 text-orange-400" />
+              ) : (
+                <PanelLeft className="w-5 h-5 text-slate-300 hover:text-orange-400" />
+              )}
+            </button>
             <div className="bg-[#FF7B00] p-2 rounded-lg">
               <ShieldCheck className="w-5 h-5 text-white" />
             </div>
@@ -516,52 +552,89 @@ export default function AdminPage() {
         </div>
       </header>
 
-      {/* Main Workspace (Full Width & 50% Reduced Left Margin) */}
-      <div className="w-full pl-2 sm:pl-3 lg:pl-3 pr-2 sm:pr-3 lg:pr-4 py-3 sm:py-4 flex-1 flex flex-col lg:flex-row gap-3.5 lg:gap-4 min-w-0">
-        {/* Left Navigation Sidebar */}
-        <aside className="w-full lg:w-64 shrink-0">
-          <nav className="bg-white rounded-xl border border-gray-200 p-2 shadow-sm flex lg:flex-col gap-1 overflow-x-auto">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
+      {/* Main Workspace (Full Width & Collapsible Sidebar with Swing Tab) */}
+      <div className="w-full pl-2 sm:pl-3 lg:pl-3 pr-2 sm:pr-3 lg:pr-4 py-3 sm:py-4 flex-1 flex flex-col lg:flex-row gap-3.5 lg:gap-4 min-w-0 items-start">
+        {/* Left Navigation Sidebar / Slide Tab */}
+        {isSidebarOpen ? (
+          <aside className="w-full lg:w-64 shrink-0 transition-all duration-300">
+            <nav className="bg-white rounded-xl border border-gray-200 p-2 shadow-sm flex lg:flex-col gap-1 overflow-x-auto relative">
+              {/* Sidebar Header with Collapse Button */}
+              <div className="hidden lg:flex items-center justify-between px-2.5 py-1.5 mb-1 border-b border-gray-100">
+                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                  관리자 메뉴 목록
+                </span>
                 <button
-                  key={item.id}
                   type="button"
-                  onClick={() => setActiveTab(item.id)}
-                  className={`flex items-center justify-between gap-2 px-3.5 py-3 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
-                    isActive
-                      ? "bg-[#FF7B00] text-white shadow-sm"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
+                  onClick={toggleSidebar}
+                  title="관리자 메뉴 접기 (좌측 탭으로 축소)"
+                  className="flex items-center gap-1 text-[11px] font-medium text-gray-400 hover:text-[#FF7B00] hover:bg-orange-50 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
                 >
-                  <span className="flex items-center gap-2.5">
-                    <Icon className="w-4 h-4 shrink-0" />
-                    {item.label}
-                  </span>
-                  {item.badge !== undefined && item.badge > 0 && (
-                    <span
-                      className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                        isActive
-                          ? "bg-white text-[#FF7B00]"
-                          : "bg-red-500 text-white"
-                      }`}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
+                  <span>접기</span>
+                  <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
-              );
-            })}
-          </nav>
+              </div>
 
-          {loadingData && (
-            <div className="mt-3 flex items-center justify-center gap-2 text-xs text-gray-500 py-2">
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#FF7B00]" />
-              동기화 중...
-            </div>
-          )}
-        </aside>
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setActiveTab(item.id)}
+                    className={`flex items-center justify-between gap-2 px-3.5 py-3 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
+                      isActive
+                        ? "bg-[#FF7B00] text-white shadow-sm"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <Icon className="w-4 h-4 shrink-0" />
+                      {item.label}
+                    </span>
+                    {item.badge !== undefined && item.badge > 0 && (
+                      <span
+                        className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                          isActive
+                            ? "bg-white text-[#FF7B00]"
+                            : "bg-red-500 text-white"
+                        }`}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+
+            {loadingData && (
+              <div className="mt-3 flex items-center justify-center gap-2 text-xs text-gray-500 py-2">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#FF7B00]" />
+                동기화 중...
+              </div>
+            )}
+          </aside>
+        ) : (
+          /* Collapsed State: Left Edge Swing Tab Handle (Identical to project order swing tab) */
+          <aside className="shrink-0 sticky top-20 z-20 self-start">
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              data-testid="button-admin-sidebar-swing-tab"
+              title="관리자 메뉴 펼치기"
+              className="bg-[#FF7B00] hover:bg-[#e66f00] active:scale-95 text-white rounded-r-xl px-2 py-4 shadow-2xl border border-l-0 border-orange-400 flex flex-col items-center gap-2 cursor-pointer transition-all shrink-0 group"
+            >
+              <ChevronRight className="w-4 h-4 text-white group-hover:translate-x-0.5 transition-transform animate-pulse" />
+              <span className="text-[11px] font-black leading-tight [writing-mode:vertical-rl] tracking-wider py-1">
+                관리자 메뉴
+              </span>
+              <span className="px-1.5 py-0.5 rounded-full bg-slate-950 text-orange-300 text-[10.5px] font-black border border-orange-400/60 min-w-[22px] text-center shadow-xs">
+                {totalUnread > 0 ? totalUnread : "열기"}
+              </span>
+            </button>
+          </aside>
+        )}
 
         {/* Right Content Area */}
         <main className="flex-1 min-w-0">
