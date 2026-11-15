@@ -103,7 +103,7 @@ export default function NewProducts() {
                     <div
                       className={`${
                         item.wide ? "aspect-[8/3]" : "aspect-[4/3]"
-                      } bg-gray-50 relative overflow-hidden`}
+                      } bg-white relative overflow-hidden`}
                     >
                       <img
                         src={resolveAssetUrl(item.image)}
@@ -114,7 +114,7 @@ export default function NewProducts() {
                             "--hover-scale": item.hoverScale || 1.3,
                           } as React.CSSProperties
                         }
-                        className="w-full h-full object-contain p-4 transition-transform duration-500 [transform:scale(var(--base-scale))] group-hover:[transform:scale(var(--hover-scale))]"
+                        className="w-full h-full object-contain p-0 transition-transform duration-500 [transform:scale(var(--base-scale))] group-hover:[transform:scale(var(--hover-scale))]"
                       />
                       {item.showBadge && (
                         <div className="absolute top-4 left-4 bg-[#FF7B00] text-white text-xs font-bold px-3 py-1 rounded-full z-10">
