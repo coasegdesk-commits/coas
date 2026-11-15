@@ -96,14 +96,14 @@ export default function NewProducts() {
                   className={`group relative bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border cursor-pointer h-full flex flex-col justify-between ${
                     addedQty > 0
                       ? "border-[#FF7B00] ring-1 ring-[#FF7B00]/40"
-                      : "border-gray-100"
+                      : "border-gray-200 hover:border-[#FF7B00]/50"
                   }`}
                 >
                   <div>
                     <div
                       className={`${
                         item.wide ? "aspect-[8/3]" : "aspect-[4/3]"
-                      } bg-white relative overflow-hidden`}
+                      } bg-white relative overflow-hidden border-b border-gray-100`}
                     >
                       <img
                         src={resolveAssetUrl(item.image)}
