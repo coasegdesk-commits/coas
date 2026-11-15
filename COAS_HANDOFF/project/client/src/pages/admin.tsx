@@ -69,6 +69,7 @@ import {
   ChevronRight,
   PanelLeft,
   PanelLeftClose,
+  GripVertical,
 } from "lucide-react";
 
 interface AdminOverviewData {
@@ -556,7 +557,7 @@ export default function AdminPage() {
       <div className="w-full pl-2 sm:pl-3 lg:pl-3 pr-2 sm:pr-3 lg:pr-4 py-3 sm:py-4 flex-1 flex flex-col lg:flex-row gap-3.5 lg:gap-4 min-w-0 items-start">
         {/* Left Navigation Sidebar / Slide Tab */}
         {isSidebarOpen ? (
-          <aside className="w-full lg:w-64 shrink-0 transition-all duration-300">
+          <aside className="w-full lg:w-64 shrink-0 transition-all duration-300 relative group/sidebar">
             <nav className="bg-white rounded-xl border border-gray-200 p-2 shadow-sm flex lg:flex-col gap-1 overflow-x-auto relative">
               {/* Sidebar Header with Collapse Button */}
               <div className="hidden lg:flex items-center justify-between px-2.5 py-1.5 mb-1 border-b border-gray-100">
@@ -606,6 +607,17 @@ export default function AdminPage() {
                   </button>
                 );
               })}
+
+              {/* 6-Dot Point Pull-to-Collapse Slide Tab (사이드바 우측 경계면 6점 포인트 슬라이드탭) */}
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                data-testid="button-sidebar-6dot-collapse"
+                title="사이드바 메뉴 접기 (6점 포인트 슬라이드탭)"
+                className="hidden lg:flex absolute -right-3.5 top-32 z-30 w-6 h-14 bg-white hover:bg-orange-50 text-gray-400 hover:text-[#FF7B00] border border-gray-300 hover:border-[#FF7B00] rounded-r-lg shadow-md items-center justify-center cursor-pointer transition-all group"
+              >
+                <GripVertical className="w-4 h-4 group-hover:scale-110 transition-transform text-gray-500 group-hover:text-[#FF7B00]" />
+              </button>
             </nav>
 
             {loadingData && (
@@ -616,20 +628,33 @@ export default function AdminPage() {
             )}
           </aside>
         ) : (
-          /* Collapsed State: Left Edge Swing Tab Handle (Identical to project order swing tab) */
-          <aside className="shrink-0 sticky top-20 z-20 self-start">
+          /* Collapsed State: Left Edge 6-Dot Point Slide Tab & Swing Tab Handle */
+          <aside className="shrink-0 sticky top-20 z-20 self-start flex flex-col items-start gap-2">
+            {/* 6-Dot Point Pull-to-Expand Slide Tab */}
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              data-testid="button-sidebar-6dot-expand"
+              title="사이드바 메뉴 펼치기 (6점 포인트 슬라이드탭)"
+              className="bg-white hover:bg-orange-50 text-gray-400 hover:text-[#FF7B00] border border-l-0 border-gray-300 hover:border-[#FF7B00] rounded-r-lg w-6 h-14 shadow-md flex items-center justify-center cursor-pointer transition-all group"
+            >
+              <GripVertical className="w-4 h-4 group-hover:scale-110 transition-transform text-[#FF7B00]" />
+            </button>
+
+            {/* Standard Orange Vertical Swing Tab Handle */}
             <button
               type="button"
               onClick={toggleSidebar}
               data-testid="button-admin-sidebar-swing-tab"
               title="관리자 메뉴 펼치기"
-              className="bg-[#FF7B00] hover:bg-[#e66f00] active:scale-95 text-white rounded-r-xl px-2 py-4 shadow-2xl border border-l-0 border-orange-400 flex flex-col items-center gap-2 cursor-pointer transition-all shrink-0 group"
+              className="bg-[#FF7B00] hover:bg-[#e66f00] active:scale-95 text-white rounded-r-xl px-2 py-3.5 shadow-2xl border border-l-0 border-orange-400 flex flex-col items-center gap-1.5 cursor-pointer transition-all shrink-0 group"
             >
+              <GripVertical className="w-3.5 h-3.5 text-orange-200 group-hover:scale-110 transition-transform" />
               <ChevronRight className="w-4 h-4 text-white group-hover:translate-x-0.5 transition-transform animate-pulse" />
               <span className="text-[11px] font-black leading-tight [writing-mode:vertical-rl] tracking-wider py-1">
                 관리자 메뉴
               </span>
-              <span className="px-1.5 py-0.5 rounded-full bg-slate-950 text-orange-300 text-[10.5px] font-black border border-orange-400/60 min-w-[22px] text-center shadow-xs">
+              <span className="px-1.5 py-0.5 rounded-full bg-slate-950 text-orange-300 text-[10px] font-black border border-orange-400/60 min-w-[20px] text-center shadow-xs">
                 {totalUnread > 0 ? totalUnread : "열기"}
               </span>
             </button>
