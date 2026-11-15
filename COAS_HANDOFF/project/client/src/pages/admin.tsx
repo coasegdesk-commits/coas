@@ -332,9 +332,6 @@ export default function AdminPage() {
                 autoFocus
                 className="h-11"
               />
-              <p className="text-[11px] text-gray-400">
-                * 초기 설정 비밀번호는 <code className="font-mono text-gray-600">coas1234</code> 이며, 로그인 후 상단 [비밀번호 변경]에서 즉시 변경하실 수 있습니다.
-              </p>
             </div>
 
             <Button
