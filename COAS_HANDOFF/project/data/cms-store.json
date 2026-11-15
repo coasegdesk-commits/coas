@@ -62,56 +62,56 @@
         "productId": "sd-60",
         "name": "60kg(SD)",
         "page": "48 p",
-        "image": "/attached_assets/parts_images/part-004.png"
+        "image": "/attached_assets/featured_master/featured_sd60.png"
       },
       {
         "id": "fp-2",
         "productId": "sd-80",
         "name": "80kg(SD)",
         "page": "50 p",
-        "image": "/attached_assets/parts_images/part-006.png"
+        "image": "/attached_assets/featured_master/featured_sd80.png"
       },
       {
         "id": "fp-3",
         "productId": "m-80",
         "name": "M-80",
         "page": "54 p",
-        "image": "/attached_assets/parts_images/part-008.png"
+        "image": "/attached_assets/featured_master/featured_m80.png"
       },
       {
         "id": "fp-4",
         "productId": "sd-150",
         "name": "150kg(SD)",
         "page": "56 p",
-        "image": "/attached_assets/parts_images/part-010.png"
+        "image": "/attached_assets/featured_master/featured_sd150.png"
       },
       {
         "id": "fp-5",
         "productId": "dp-40",
         "name": "DP-40",
         "page": "24 p",
-        "image": "/attached_assets/parts_images/part-018.png"
+        "image": "/attached_assets/featured_master/featured_dp40.png"
       },
       {
         "id": "fp-6",
         "productId": "dp-60",
         "name": "DP-60",
         "page": "26 p",
-        "image": "/attached_assets/parts_images/part-020.png"
+        "image": "/attached_assets/featured_master/featured_dp60.png"
       },
       {
         "id": "fp-7",
         "productId": "gsd-60",
         "name": "60kg(GSD)",
         "page": "64 p",
-        "image": "/attached_assets/parts_images/part-028.png"
+        "image": "/attached_assets/featured_master/featured_gsd60.png"
       },
       {
         "id": "fp-8",
         "productId": "fd-100",
         "name": "100kg(FD)",
         "page": "76 p",
-        "image": "/attached_assets/parts_images/part-040.png"
+        "image": "/attached_assets/featured_master/featured_fd100.png"
       }
     ],
     "ecatalog": {
@@ -3670,7 +3670,7 @@
       "productId": "m-80",
       "name": "M-80",
       "desc": "M-80 슬라이딩 도어 시스템",
-      "image": "/attached_assets/3-M-80-54p_1765161792190.png",
+      "image": "/attached_assets/featured_master/featured_m80.png",
       "wide": false,
       "baseScale": 1.1,
       "hoverScale": 1.3,
@@ -3684,7 +3684,7 @@
       "productId": "dp-40-wide",
       "name": "DP-40",
       "desc": "DP-40 댐핑 슬라이딩 도어",
-      "image": "/attached_assets/DP-40_1770327501473.png",
+      "image": "/attached_assets/featured_master/featured_dp40.png",
       "wide": false,
       "baseScale": 1.2,
       "hoverScale": 1.44,
@@ -3698,7 +3698,7 @@
       "productId": "sd-200",
       "name": "200kg(SD)",
       "desc": "200kg 하중 슬라이딩 도어 시스템",
-      "image": "/attached_assets/DP-60_1770328862066.png",
+      "image": "/attached_assets/featured_master/featured_dp60.png",
       "wide": false,
       "baseScale": 1.1,
       "hoverScale": 1.3,
@@ -3712,7 +3712,7 @@
       "productId": "gsd-60",
       "name": "60kg(GSD)",
       "desc": "60kg 유리 슬라이딩 도어",
-      "image": "/attached_assets/60kg(GSD)_1770329444630.png",
+      "image": "/attached_assets/featured_master/featured_gsd60.png",
       "wide": false,
       "baseScale": 1.1,
       "hoverScale": 1.3,
@@ -4654,6 +4654,432 @@
   ],
   "catalogRequests": [],
   "inquiries": [],
-  "orders": [],
+  "orders": [
+    {
+      "companyName": "(주)코아스인테리어",
+      "contactName": "김현장 실장",
+      "phone": "010-1234-5678",
+      "email": "coas_order@interior.co.kr",
+      "deliveryAddress": "경기도 화성시 동탄첨단산업1로 27, A동 302호",
+      "desiredDate": "2026-11-15",
+      "shippingMethod": "화물",
+      "shippingCarrier": "경동화물",
+      "trackingNumber": "KD-9821-4820",
+      "shippingStatus": "packed",
+      "status": "in_progress",
+      "memo": "오전 화물지점 도착 즉시 연락 바랍니다.",
+      "adminMemo": "포장 완료. 11시 경동화물 동탄영업소 출고 예정",
+      "createdAt": "2026-11-15T09:15:00.000Z",
+      "items": [
+        {
+          "productName": "60kg(SD) 슬라이딩도어",
+          "spec": "기본 세트 구성",
+          "unit": "SET",
+          "quantity": "25",
+          "unitPrice": 28000,
+          "amount": 700000,
+          "note": "아파트 중문 현장용"
+        },
+        {
+          "productName": "DP-40 댐핑 슬라이딩",
+          "spec": "기본 세트 구성",
+          "unit": "SET",
+          "quantity": "20",
+          "unitPrice": 26000,
+          "amount": 520000,
+          "note": "소프트 클로징 필수"
+        },
+        {
+          "productName": "1 Body-40/60/90 원바디",
+          "spec": "상부롤러 6mm / 2구 롤러",
+          "unit": "SET",
+          "quantity": "15",
+          "unitPrice": 32000,
+          "amount": 480000,
+          "note": ""
+        }
+      ],
+      "attachments": [],
+      "totalAmount": 1700000,
+      "id": "ord_seed_20261115_001",
+      "orderNumber": "ORD-20261115-001"
+    },
+    {
+      "companyName": "한샘인테리어 디자인",
+      "contactName": "박과장",
+      "phone": "010-9876-5432",
+      "email": "hanssem_buyer@interior.com",
+      "deliveryAddress": "서울시 강남구 테헤란로 152 한샘빌딩 5층 자재부",
+      "desiredDate": "2026-11-15",
+      "shippingMethod": "택배",
+      "shippingCarrier": "로젠택배",
+      "trackingNumber": "9482-1049-2810",
+      "shippingStatus": "shipped",
+      "status": "completed",
+      "shippedAt": "2026-11-15T11:30:00.000Z",
+      "memo": "본사 자재 검수실 직접 입고 건",
+      "adminMemo": "로젠택배 기사 픽업 완료",
+      "createdAt": "2026-11-15T08:40:00.000Z",
+      "items": [
+        {
+          "productName": "80kg(SD) 중량 슬라이딩",
+          "spec": "기본 세트 구성",
+          "unit": "SET",
+          "quantity": "30",
+          "unitPrice": 34000,
+          "amount": 1020000,
+          "note": "주방 포켓도어용"
+        },
+        {
+          "productName": "DP-60 댐핑",
+          "spec": "기본 세트 구성",
+          "unit": "SET",
+          "quantity": "30",
+          "unitPrice": 31000,
+          "amount": 930000,
+          "note": ""
+        }
+      ],
+      "attachments": [],
+      "totalAmount": 1950000,
+      "id": "ord_seed_20261115_002",
+      "orderNumber": "ORD-20261115-002"
+    },
+    {
+      "companyName": "영림도어 하드웨어",
+      "contactName": "이소장",
+      "phone": "010-5555-7777",
+      "email": "younglim_hw@hardware.kr",
+      "deliveryAddress": "인천광역시 서구 원창동 382-1 물류센터",
+      "desiredDate": "2026-11-15",
+      "shippingMethod": "화물",
+      "shippingCarrier": "대신화물",
+      "trackingNumber": "",
+      "shippingStatus": "pending",
+      "status": "new",
+      "memo": "파손 방지 완충포장 요청",
+      "adminMemo": "오후 피킹 대기",
+      "createdAt": "2026-11-15T10:30:00.000Z",
+      "items": [
+        {
+          "productName": "150kg(SD) 중하중 슬라이딩도어",
+          "spec": "기본 세트 구성",
+          "unit": "SET",
+          "quantity": "15",
+          "unitPrice": 55000,
+          "amount": 825000,
+          "note": "상가 출입문용"
+        },
+        {
+          "productName": "DP-100 댐퍼",
+          "spec": "기본 세트 구성",
+          "unit": "SET",
+          "quantity": "15",
+          "unitPrice": 42000,
+          "amount": 630000,
+          "note": ""
+        },
+        {
+          "productName": "500kg(SD) 초고하중 슬라이딩",
+          "spec": "기본 세트 구성",
+          "unit": "SET",
+          "quantity": "3",
+          "unitPrice": 165000,
+          "amount": 495000,
+          "note": "공장 중량문"
+        }
+      ],
+      "attachments": [],
+      "totalAmount": 1950000,
+      "id": "ord_seed_20261115_003",
+      "orderNumber": "ORD-20261115-003"
+    },
+    {
+      "companyName": "(주)032인디자인",
+      "contactName": "이항식 대표",
+      "phone": "010-3201-8032",
+      "email": "032indesign@naver.com",
+      "deliveryAddress": "인천 남동구 고잔동 632-4 공장 방문수령",
+      "desiredDate": "2026-11-15",
+      "shippingMethod": "방문수령",
+      "shippingCarrier": "방문수령",
+      "trackingNumber": "방문직접수령",
+      "shippingStatus": "pending",
+      "status": "new",
+      "memo": "오후 3시 대표 직접 픽업 예정",
+      "adminMemo": "출고대기실에 제품 준비 완료해 둘 것",
+      "createdAt": "2026-11-15T11:00:00.000Z",
+      "items": [
+        {
+          "productName": "M-80 슬라이딩도어 시스템",
+          "spec": "기본 세트 구성",
+          "unit": "SET",
+          "quantity": "20",
+          "unitPrice": 38000,
+          "amount": 760000,
+          "note": "인천 송도 오피스 현장"
+        },
+        {
+          "productName": "하부 슬라이딩 레일 3M",
+          "spec": "알루미늄 아노다이징",
+          "unit": "本",
+          "quantity": "15",
+          "unitPrice": 18000,
+          "amount": 270000,
+          "note": ""
+        }
+      ],
+      "attachments": [],
+      "totalAmount": 1030000,
+      "id": "ord_seed_20261115_004",
+      "orderNumber": "ORD-20261115-004"
+    },
+    {
+      "companyName": "현대리바트 특판사업부",
+      "contactName": "정차장",
+      "phone": "010-4411-9922",
+      "email": "livart_spec@hyundai.com",
+      "deliveryAddress": "경기도 용인시 처인구 남사읍 원암로 45 리바트 물류1센터",
+      "desiredDate": "2026-11-14",
+      "shippingMethod": "용차",
+      "shippingCarrier": "직배송/용차",
+      "trackingNumber": "경기88바3910(5톤)",
+      "shippingStatus": "delivered",
+      "status": "completed",
+      "shippedAt": "2026-11-14T09:00:00.000Z",
+      "memo": "아파트 500세대 현장 1차 납품",
+      "adminMemo": "현장 하차 검수 완료 확인됨",
+      "createdAt": "2026-11-14T08:30:00.000Z",
+      "items": [
+        {
+          "productName": "60kg(SD) 슬라이딩도어",
+          "spec": "기본 세트 구성",
+          "unit": "SET",
+          "quantity": "80",
+          "unitPrice": 28000,
+          "amount": 2240000,
+          "note": ""
+        },
+        {
+          "productName": "DP-20 댐핑도어",
+          "spec": "기본 세트 구성",
+          "unit": "SET",
+          "quantity": "80",
+          "unitPrice": 22000,
+          "amount": 1760000,
+          "note": ""
+        }
+      ],
+      "attachments": [],
+      "totalAmount": 4000000,
+      "id": "ord_seed_20261114_005",
+      "orderNumber": "ORD-20261114-005"
+    },
+    {
+      "companyName": "(주)코아스인테리어",
+      "contactName": "박과장",
+      "phone": "010-2345-6789",
+      "email": "coas_order@interior.co.kr",
+      "deliveryAddress": "서울시 송파구 문정동 가든파이브 툴동 현장",
+      "desiredDate": "2026-11-14",
+      "shippingMethod": "화물",
+      "shippingCarrier": "경동화물",
+      "trackingNumber": "KD-1114-8831",
+      "shippingStatus": "delivered",
+      "status": "completed",
+      "shippedAt": "2026-11-14T14:00:00.000Z",
+      "memo": "화물 지점 도착 후 화물차 기사 전화 요망",
+      "adminMemo": "송장 등록 완료",
+      "createdAt": "2026-11-14T11:20:00.000Z",
+      "items": [
+        {
+          "productName": "250kg(SD) 고하중 슬라이딩",
+          "spec": "기본 세트 구성",
+          "unit": "SET",
+          "quantity": "15",
+          "unitPrice": 85000,
+          "amount": 1275000,
+          "note": ""
+        },
+        {
+          "productName": "DP-100 댐퍼",
+          "spec": "기본 세트 구성",
+          "unit": "SET",
+          "quantity": "15",
+          "unitPrice": 42000,
+          "amount": 630000,
+          "note": ""
+        }
+      ],
+      "attachments": [],
+      "totalAmount": 1905000,
+      "id": "ord_seed_20261114_006",
+      "orderNumber": "ORD-20261114-006"
+    },
+    {
+      "companyName": "KCC창호인테리어",
+      "contactName": "최부장",
+      "phone": "010-7711-2244",
+      "email": "kcc_door@kcc.co.kr",
+      "deliveryAddress": "경기도 안산시 단원구 원시동 반월공단 13블록",
+      "desiredDate": "2026-11-12",
+      "shippingMethod": "화물",
+      "shippingCarrier": "대신화물",
+      "trackingNumber": "DS-1112-9901",
+      "shippingStatus": "delivered",
+      "status": "completed",
+      "shippedAt": "2026-11-12T10:00:00.000Z",
+      "memo": "유리 전용 부속 분실 방지 패킹 요망",
+      "adminMemo": "배송완료",
+      "createdAt": "2026-11-12T09:00:00.000Z",
+      "items": [
+        {
+          "productName": "60kg(GSD) 유리 슬라이딩도어",
+          "spec": "기본 세트 구성",
+          "unit": "SET",
+          "quantity": "25",
+          "unitPrice": 45000,
+          "amount": 1125000,
+          "note": "유리 파티션"
+        },
+        {
+          "productName": "100kg(GDP) 유리댐핑도어",
+          "spec": "기본 세트 구성",
+          "unit": "SET",
+          "quantity": "20",
+          "unitPrice": 64000,
+          "amount": 1280000,
+          "note": ""
+        }
+      ],
+      "attachments": [],
+      "totalAmount": 2405000,
+      "id": "ord_seed_20261112_007",
+      "orderNumber": "ORD-20261112-007"
+    },
+    {
+      "companyName": "한샘인테리어 디자인",
+      "contactName": "김자재 대리",
+      "phone": "010-8822-1133",
+      "email": "hanssem_buyer@interior.com",
+      "deliveryAddress": "경기도 하남시 감일백제로 128 현장자재창고",
+      "desiredDate": "2026-11-10",
+      "shippingMethod": "택배",
+      "shippingCarrier": "CJ대한통운",
+      "trackingNumber": "6829-1092-4819",
+      "shippingStatus": "delivered",
+      "status": "completed",
+      "shippedAt": "2026-11-10T15:00:00.000Z",
+      "memo": "택배 박스 넘버링 표기",
+      "adminMemo": "정상 수령 확인",
+      "createdAt": "2026-11-10T11:45:00.000Z",
+      "items": [
+        {
+          "productName": "80kg(SD) 슬라이딩도어",
+          "spec": "기본 세트 구성",
+          "unit": "SET",
+          "quantity": "40",
+          "unitPrice": 34000,
+          "amount": 1360000,
+          "note": ""
+        },
+        {
+          "productName": "1 Body-40/60/90 원바디",
+          "spec": "상부롤러 6mm / 2구 롤러",
+          "unit": "SET",
+          "quantity": "40",
+          "unitPrice": 32000,
+          "amount": 1280000,
+          "note": ""
+        }
+      ],
+      "attachments": [],
+      "totalAmount": 2640000,
+      "id": "ord_seed_20261110_008",
+      "orderNumber": "ORD-20261110-008"
+    },
+    {
+      "companyName": "영림도어 하드웨어",
+      "contactName": "김실장",
+      "phone": "010-5555-8888",
+      "email": "younglim_hw@hardware.kr",
+      "deliveryAddress": "충남 아산시 배방공장 자재1창고",
+      "desiredDate": "2026-11-04",
+      "shippingMethod": "화물",
+      "shippingCarrier": "경동화물",
+      "trackingNumber": "KD-1104-5512",
+      "shippingStatus": "delivered",
+      "status": "completed",
+      "shippedAt": "2026-11-04T13:00:00.000Z",
+      "memo": "월 정기 대량 발주 건",
+      "adminMemo": "정산 완료",
+      "createdAt": "2026-11-04T10:10:00.000Z",
+      "items": [
+        {
+          "productName": "500kg(SD) 초고하중 슬라이딩",
+          "spec": "기본 세트 구성",
+          "unit": "SET",
+          "quantity": "12",
+          "unitPrice": 165000,
+          "amount": 1980000,
+          "note": ""
+        },
+        {
+          "productName": "250kg(SD) 고하중 슬라이딩",
+          "spec": "기본 세트 구성",
+          "unit": "SET",
+          "quantity": "20",
+          "unitPrice": 85000,
+          "amount": 1700000,
+          "note": ""
+        }
+      ],
+      "attachments": [],
+      "totalAmount": 3680000,
+      "id": "ord_seed_20261104_009",
+      "orderNumber": "ORD-20261104-009"
+    },
+    {
+      "companyName": "(주)코아스인테리어",
+      "contactName": "김현장 실장",
+      "phone": "010-1234-5678",
+      "email": "coas_order@interior.co.kr",
+      "deliveryAddress": "경기도 화성시 향남읍 발안공단로 82",
+      "desiredDate": "2026-10-28",
+      "shippingMethod": "화물",
+      "shippingCarrier": "경동화물",
+      "trackingNumber": "KD-1028-1192",
+      "shippingStatus": "delivered",
+      "status": "completed",
+      "shippedAt": "2026-10-28T16:00:00.000Z",
+      "memo": "10월 마감분 발주",
+      "adminMemo": "10월 거래명세서 발행 완료",
+      "createdAt": "2026-10-28T09:40:00.000Z",
+      "items": [
+        {
+          "productName": "M-80 슬라이딩도어 시스템",
+          "spec": "기본 세트 구성",
+          "unit": "SET",
+          "quantity": "50",
+          "unitPrice": 38000,
+          "amount": 1900000,
+          "note": ""
+        },
+        {
+          "productName": "DP-40 댐핑 슬라이딩",
+          "spec": "기본 세트 구성",
+          "unit": "SET",
+          "quantity": "50",
+          "unitPrice": 26000,
+          "amount": 1300000,
+          "note": ""
+        }
+      ],
+      "attachments": [],
+      "totalAmount": 3200000,
+      "id": "ord_seed_20261028_010",
+      "orderNumber": "ORD-20261028-010"
+    }
+  ],
   "media": []
 }
