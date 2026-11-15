@@ -2509,7 +2509,8 @@ export default function OrderPage() {
   //   item rows (품목) pack all the way down to the exact ~13mm (50px) bottom margin with elastic stretch.
   const a4Pages = useMemo(() => {
     const innerSheetH = orientation === "landscape" ? 722 : 1016;
-    const firstPageTopChrome = orientation === "landscape" ? 215 : 252;
+    const singlePageTopChrome = orientation === "landscape" ? 215 : 252;
+    const firstPageTopChrome = orientation === "landscape" ? 215 : 272;
     const nextPageTopChrome = orientation === "landscape" ? 41 : 44;
     const lastPageMinBottomChrome = orientation === "landscape" ? 85 : 100;
     const lastPageComfortBottomChrome = orientation === "landscape" ? 98 : 118;
@@ -2525,8 +2526,8 @@ export default function OrderPage() {
     const extraMemoH = effectiveMemoH - baseMemoH;
 
     const singlePageBodyBudget =
-      innerSheetH - firstPageTopChrome - lastPageMinBottomChrome - extraMemoH; // 664 portrait | 422 landscape
-    const firstPageBodyBudget = innerSheetH - firstPageTopChrome; // 764 portrait | 507 landscape
+      innerSheetH - singlePageTopChrome - lastPageMinBottomChrome - extraMemoH; // 664 portrait | 422 landscape
+    const firstPageBodyBudget = innerSheetH - firstPageTopChrome; // 744 portrait | 507 landscape
     const midPageBodyBudget = innerSheetH - nextPageTopChrome; // 972 portrait | 681 landscape
     const lastPageFitBudget =
       innerSheetH - nextPageTopChrome - lastPageMinBottomChrome - extraMemoH; // 872 portrait | 596 landscape
