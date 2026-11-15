@@ -2178,21 +2178,29 @@ export default function OrderPage() {
     }
   };
 
+  const [pendingRowTrimConfirm, setPendingRowTrimConfirm] = useState<{
+    targetCount: number;
+    presetHint?: "10" | "15" | "20" | "25" | "30" | "custom";
+  } | null>(null);
+
+  const itemsSnapshotRef = useRef(items);
+  itemsSnapshotRef.current = items;
+
   // Enforce minimum rows when adjusting row count directly or via presets
   const setTargetRowCount = (
     rawCount: number,
     presetHint?: "10" | "15" | "20" | "25" | "30" | "custom",
+    forceTrim = false,
   ) => {
     if (Number.isNaN(rawCount)) return;
-    const clamped = Math.max(MIN_ORDER_ROW_COUNT, Math.min(200, Math.round(rawCount)));
+    const clamped = Math.max(
+      MIN_ORDER_ROW_COUNT,
+      Math.min(200, Math.round(rawCount)),
+    );
+    const curItems = itemsSnapshotRef.current;
 
-    setItems((prev) => {
-      if (clamped === prev.length) return prev;
-      if (clamped > prev.length) {
-        const added = createInitialOrderRows(clamped - prev.length);
-        return [...prev, ...added];
-      }
-      const hasDataInTail = prev
+    if (clamped < curItems.length && !forceTrim) {
+      const hasDataInTail = curItems
         .slice(clamped)
         .some(
           (r) =>
@@ -2203,10 +2211,17 @@ export default function OrderPage() {
             r.note.trim(),
         );
       if (hasDataInTail) {
-        const ok = window.confirm(
-          `표 행 수를 ${clamped}행으로 줄이시면 ${clamped + 1}번째 행 이후에 입력된 품목 내용이 삭제됩니다. 계속 진행하시겠습니까?`,
-        );
-        if (!ok) return prev;
+        setRowCountDraft(String(curItems.length));
+        setPendingRowTrimConfirm({ targetCount: clamped, presetHint });
+        return;
+      }
+    }
+
+    setItems((prev) => {
+      if (clamped === prev.length) return prev;
+      if (clamped > prev.length) {
+        const added = createInitialOrderRows(clamped - prev.length);
+        return [...prev, ...added];
       }
       return prev.slice(0, clamped);
     });
@@ -2369,6 +2384,7 @@ export default function OrderPage() {
   const isResizingMemoRef = useRef(false);
   const resizeStartYRef = useRef(0);
   const resizeStartRowsRef = useRef(0);
+  const lastAppliedResizeRowsRef = useRef(0);
   const [isResizingMemo, setIsResizingMemo] = useState(false);
 
   const handleStartMemoResize = (e: React.MouseEvent) => {
@@ -2376,7 +2392,15 @@ export default function OrderPage() {
     isResizingMemoRef.current = true;
     resizeStartYRef.current = e.clientY;
     resizeStartRowsRef.current = items.length;
+    lastAppliedResizeRowsRef.current = items.length;
     setIsResizingMemo(true);
+
+    const stopResize = () => {
+      isResizingMemoRef.current = false;
+      setIsResizingMemo(false);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
 
     const onMouseMove = (moveEvt: MouseEvent) => {
       if (!isResizingMemoRef.current) return;
@@ -2391,16 +2415,33 @@ export default function OrderPage() {
         MIN_ORDER_ROW_COUNT,
         Math.min(maxRows, resizeStartRowsRef.current + rowDelta),
       );
-      if (newCount !== items.length) {
-        setTargetRowCount(newCount);
+      if (newCount === lastAppliedResizeRowsRef.current) return;
+
+      const curItems = itemsSnapshotRef.current;
+      if (newCount < curItems.length) {
+        const hasDataInTail = curItems
+          .slice(newCount)
+          .some(
+            (r) =>
+              r.productId ||
+              r.productName.trim() ||
+              r.spec.trim() ||
+              r.quantity.trim() ||
+              r.note.trim(),
+          );
+        if (hasDataInTail) {
+          stopResize();
+          setPendingRowTrimConfirm({ targetCount: newCount });
+          return;
+        }
       }
+
+      lastAppliedResizeRowsRef.current = newCount;
+      setTargetRowCount(newCount);
     };
 
     const onMouseUp = () => {
-      isResizingMemoRef.current = false;
-      setIsResizingMemo(false);
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
+      stopResize();
     };
 
     window.addEventListener("mousemove", onMouseMove);
@@ -6319,7 +6360,7 @@ export default function OrderPage() {
                                 }}
                                 className={`no-print group relative h-[14px] my-0 flex items-center justify-center cursor-ns-resize select-none z-20 transition-colors ${
                                   isResizingMemo
-                                    ? "bg-blue-600 cursor-ns-resize"
+                                    ? "bg-[#FF7B00] cursor-ns-resize"
                                     : "bg-transparent hover:bg-[#FF7B00]"
                                 }`}
                               >
@@ -6344,18 +6385,24 @@ export default function OrderPage() {
                                   </svg>
                                 </div>
 
-                                {/* Blue Floating Badge during Dragging: "드래그 할 때 행 갯수 표시 (위 테이블에 파란)" */}
+                                {/* Orange Floating Badge during Dragging */}
                                 {isResizingMemo && (
-                                  <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-30 px-2.5 py-0.5 rounded bg-blue-600 text-white text-[10.5px] font-black shadow-lg flex items-center gap-1 whitespace-nowrap pointer-events-none">
+                                  <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-30 px-2.5 py-0.5 rounded bg-[#FF7B00] text-white text-[10.5px] font-black shadow-lg flex items-center gap-1 whitespace-nowrap pointer-events-none">
                                     <span>행 수: {items.length}행</span>
-                                    <span className="text-blue-200 text-[9px] font-normal">
+                                    <span className="text-orange-100 text-[9px] font-normal">
                                       ({items.length <= MIN_ORDER_ROW_COUNT
                                         ? `최소 ${MIN_ORDER_ROW_COUNT}행`
-                                        : items.length >= (orientation === "landscape" ? 20 : 25)
-                                          ? "최대"
-                                          : "조절 중"})
+                                        : a4Pages.length === 1 &&
+                                            items.length >=
+                                              (orientation === "landscape"
+                                                ? 20
+                                                : 25)
+                                          ? "1장 최대"
+                                          : items.length >= 200
+                                            ? "최대"
+                                            : "조절 중"})
                                     </span>
-                                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-blue-600" />
+                                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#FF7B00]" />
                                   </div>
                                 )}
                               </div>
@@ -6491,6 +6538,66 @@ export default function OrderPage() {
               className="bg-[#FF7B00] hover:bg-[#e66f00] text-white font-bold"
             >
               발주서 표에 일괄 적용
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Row Count Reduction Confirmation Modal (COAS Orange Theme) */}
+      <Dialog
+        open={Boolean(pendingRowTrimConfirm)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingRowTrimConfirm(null);
+            setRowCountDraft(String(items.length));
+          }
+        }}
+      >
+        <DialogContent className="max-w-md border-t-4 border-t-[#FF7B00]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-slate-900">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#FF7B00] shrink-0" />
+              <span>표 행 수 축소 확인</span>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2 text-xs leading-relaxed text-slate-700">
+            {pendingRowTrimConfirm && (
+              <p>
+                표 행 수를{" "}
+                <strong className="text-[#FF7B00] font-extrabold">
+                  {pendingRowTrimConfirm.targetCount}행
+                </strong>
+                으로 줄이시면{" "}
+                <strong className="text-slate-900 font-extrabold">
+                  {pendingRowTrimConfirm.targetCount + 1}번째 행 이후
+                </strong>
+                에 입력된 품목 내용이 삭제됩니다. 계속 진행하시겠습니까?
+              </p>
+            )}
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setPendingRowTrimConfirm(null);
+                setRowCountDraft(String(items.length));
+              }}
+              className="border-slate-300 text-slate-700 hover:bg-slate-100 font-bold"
+            >
+              취소
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                if (!pendingRowTrimConfirm) return;
+                const { targetCount, presetHint } = pendingRowTrimConfirm;
+                setPendingRowTrimConfirm(null);
+                setTargetRowCount(targetCount, presetHint, true);
+              }}
+              className="bg-[#FF7B00] hover:bg-[#e66f00] text-white font-bold"
+            >
+              확인
             </Button>
           </DialogFooter>
         </DialogContent>
