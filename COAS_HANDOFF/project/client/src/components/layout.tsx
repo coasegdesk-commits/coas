@@ -17,6 +17,9 @@ import {
   Minus,
   ChevronUp,
   X,
+  Building2,
+  LogIn,
+  LogOut,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -24,8 +27,10 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { CatalogRequestDialog } from "@/components/catalog-request-dialog";
 import { ECatalogViewerModal } from "@/components/ecatalog-viewer-modal";
 import { SearchModal } from "@/components/search-modal";
+import { BuyerAuthModal } from "@/components/order/BuyerAuthModal";
 import { resolveAssetUrl, useCmsBootstrap } from "@/lib/cms";
 import { useOrderDraftSummary } from "@/lib/order-draft";
+import { useBuyerAuth } from "@/lib/order-auth";
 
 interface NavSubItem {
   label: string;
@@ -51,6 +56,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [ecatalogOpen, setEcatalogOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [isOrderBarMinimized, setIsOrderBarMinimized] = useState(false);
+  const [buyerAuthModalOpen, setBuyerAuthModalOpen] = useState(false);
+  const { session: buyerSession, isAuthenticated: isBuyerLoggedIn, logout: buyerLogout } = useBuyerAuth();
   const { cms } = useCmsBootstrap();
   const { itemCount, totalQty, hasActiveSession, dismissSession } =
     useOrderDraftSummary();
@@ -185,6 +192,40 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 isDarkHeader={isDarkHeader || isScrolled}
                 onClick={() => setDialogOpen(true)}
               />
+
+              {/* B2B Partner Login Button / Status Badge */}
+              {isBuyerLoggedIn ? (
+                <div className="flex items-center gap-1.5 bg-slate-800/90 border border-slate-700 rounded-lg px-2.5 py-1 text-xs shrink-0 shadow-sm">
+                  <button
+                    type="button"
+                    onClick={() => setBuyerAuthModalOpen(true)}
+                    className="flex items-center gap-1.5 font-bold text-white hover:text-[#FF7B00] transition-colors cursor-pointer"
+                    title="거래처 계정 정보 / 전환"
+                  >
+                    <Building2 className="w-3.5 h-3.5 text-[#FF7B00]" />
+                    <span className="max-w-[130px] truncate">{buyerSession.companyName}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={buyerLogout}
+                    className="text-slate-400 hover:text-white text-[11px] font-medium ml-1 pl-1.5 border-l border-slate-700 transition-colors cursor-pointer"
+                    title="로그아웃"
+                  >
+                    <LogOut className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setBuyerAuthModalOpen(true)}
+                  className="h-8 px-2.5 bg-[#FF7B00]/10 hover:bg-[#FF7B00] border-[#FF7B00]/50 text-[#FF7B00] hover:text-white text-xs font-bold transition-all cursor-pointer shrink-0"
+                  title="거래처 1초 간편로그인 (비밀번호 없음)"
+                >
+                  <LogIn className="w-3.5 h-3.5 mr-1" />
+                  거래처 로그인
+                </Button>
+              )}
             </div>
 
             {/* Contact Info */}
@@ -220,7 +261,41 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[75%] sm:w-[400px] overflow-y-auto">
-              <div className="flex flex-col gap-2 mt-10">
+              <div className="flex flex-col gap-2 mt-8">
+                {/* Mobile B2B Login Banner */}
+                {isBuyerLoggedIn ? (
+                  <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-white flex items-center justify-between mb-1 shadow-sm">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-white truncate">
+                        <Building2 className="w-4 h-4 text-[#FF7B00] shrink-0" />
+                        <span className="truncate">{buyerSession.companyName}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                        {buyerSession.contactName || "담당자"} 님 (로그인됨)
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={buyerLogout}
+                      className="text-slate-400 hover:text-white text-xs h-7 px-2 shrink-0"
+                    >
+                      로그아웃
+                    </Button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setBuyerAuthModalOpen(true)}
+                    className="w-full h-11 rounded-xl bg-[#FEE500] hover:bg-[#FDD835] active:scale-[0.99] text-[#191919] font-black text-xs flex items-center justify-center gap-2 mb-1 shadow-sm transition-all cursor-pointer"
+                  >
+                    <span className="w-5 h-5 rounded-full bg-[#191919] text-[#FEE500] flex items-center justify-center text-[10px] font-black shrink-0">
+                      💬
+                    </span>
+                    <span>거래처 1초 간편로그인</span>
+                  </button>
+                )}
+
                 <Button
                   variant="outline"
                   className="w-full mb-2 justify-start gap-2"
@@ -283,6 +358,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         isOpen={searchOpen}
         onClose={() => setSearchOpen(false)}
         language="ko"
+      />
+
+      {/* Global B2B Partner Easy Login Modal (Passwordless) */}
+      <BuyerAuthModal
+        isOpen={buyerAuthModalOpen}
+        onClose={() => setBuyerAuthModalOpen(false)}
       />
 
       {/* Right Floating Return-to-Order Smart Dock (Active when browsing Parts Index / New Products / Product Detail / Home during an Order) */}
