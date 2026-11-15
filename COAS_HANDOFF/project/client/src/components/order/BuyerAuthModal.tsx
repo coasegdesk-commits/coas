@@ -38,21 +38,51 @@ export function BuyerAuthModal({
 }: BuyerAuthModalProps) {
   const { toast } = useToast();
 
-  // Mode: "quick" (Kakao + Phone) | "phone_otp"
-  const [phone, setPhone] = useState("010-1234-5678");
+  // Phone Suffix State ( 뒷 8자리: e.g. "1234-5678" ) - 010 및 하이픈(-) 자동 처리
+  const [phoneSuffix, setPhoneSuffix] = useState("1234-5678");
   const [companyName, setCompanyName] = useState("(주)코아스인테리어");
   const [contactName, setContactName] = useState("김담당 실장");
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState("1234");
   const [rememberMe, setRememberMe] = useState(true);
 
-  // Auto-detect registered buyer when phone changes
-  const matchedBuyer = findBuyerByPhone(phone);
+  // Full Phone computed from 010 + suffix
+  const fullPhone = phoneSuffix.trim() ? `010-${phoneSuffix.trim()}` : "";
 
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setPhone(val);
-    const found = findBuyerByPhone(val);
+  // Auto-detect registered buyer when phone changes
+  const matchedBuyer = findBuyerByPhone(fullPhone);
+
+  // Smart Phone Input Handler:
+  // 1) 010 타이핑 안 하고 뒷번호만 입력해도 자동 처리
+  // 2) 혹시 010을 입력하거나 복사-붙여넣기 해도 자동으로 앞의 010 제거
+  // 3) 하이픈(-)을 안 넣어도 4자리 이후 자동 하이픈 삽입 (12345678 -> 1234-5678)
+  const handlePhoneSuffixChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let raw = e.target.value;
+
+    // 숫자만 추출
+    let digits = raw.replace(/[^0-9]/g, "");
+
+    // 사용자가 실수로 010을 먼저 입력하거나 010-을 붙여넣은 경우, 앞의 010을 자동 제거
+    if (digits.startsWith("010")) {
+      digits = digits.slice(3);
+    }
+
+    // 뒷자리는 최대 8자리까지만 허용 (4자리 국번 + 4자리 번호)
+    if (digits.length > 8) {
+      digits = digits.slice(0, 8);
+    }
+
+    // 하이픈(-) 자동 포맷팅 (4자리 초과 시 자동 하이픈 삽입)
+    let formatted = digits;
+    if (digits.length > 4) {
+      formatted = `${digits.slice(0, 4)}-${digits.slice(4)}`;
+    }
+
+    setPhoneSuffix(formatted);
+
+    // 등록된 거래처 자동 감지
+    const computedFull = formatted ? `010-${formatted}` : "";
+    const found = findBuyerByPhone(computedFull);
     if (found) {
       setCompanyName(found.companyName);
       setContactName(found.contactName);
@@ -79,22 +109,32 @@ export function BuyerAuthModal({
 
   // 2. Phone OTP Request
   const handleSendOtp = () => {
-    if (!phone.trim()) {
-      toast({ title: "휴대폰 번호를 입력해 주세요.", variant: "destructive" });
+    const digitsOnly = phoneSuffix.replace(/[^0-9]/g, "");
+    if (!digitsOnly || digitsOnly.length < 7) {
+      toast({
+        title: "휴대폰 번호 뒷자리를 정확히 입력해 주세요.",
+        description: "010을 제외한 뒷 7~8자리 숫자를 입력하시면 됩니다.",
+        variant: "destructive",
+      });
       return;
     }
     setOtpSent(true);
     toast({
       title: "인증번호 발송 완료",
-      description: `[${phone}] 번호로 4자리 인증번호가 전송되었습니다. (테스트 코드: 1234)`,
+      description: `[${fullPhone}] 번호로 4자리 인증번호가 전송되었습니다. (테스트 코드: 1234)`,
     });
   };
 
   // 3. Phone OTP Submit (Passwordless)
   const handlePhoneLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phone.trim()) {
-      toast({ title: "휴대폰 번호를 입력해 주세요.", variant: "destructive" });
+    const digitsOnly = phoneSuffix.replace(/[^0-9]/g, "");
+    if (!digitsOnly || digitsOnly.length < 7) {
+      toast({
+        title: "휴대폰 번호 뒷자리를 입력해 주세요.",
+        description: "010을 제외한 7~8자리 숫자 (예: 1234-5678)",
+        variant: "destructive",
+      });
       return;
     }
     if (otpSent && otpCode.trim() !== "1234" && otpCode.trim().length !== 4) {
@@ -102,7 +142,7 @@ export function BuyerAuthModal({
       return;
     }
 
-    const matched = findBuyerByPhone(phone);
+    const matched = findBuyerByPhone(fullPhone);
     const session: BuyerSession = matched
       ? {
           ...matched,
@@ -115,7 +155,7 @@ export function BuyerAuthModal({
           companyName: companyName.trim() || "신규 거래처",
           bizNumber: "123-45-67890",
           contactName: contactName.trim() || "담당자",
-          phone: phone.trim(),
+          phone: fullPhone,
           email: "order@" + (companyName.replace(/[^a-zA-Z0-9]/g, "") || "buyer") + ".com",
           deliveryAddress: "서울/수도권 현장 직송 배송지",
           shippingMethod: "화물",
@@ -134,6 +174,15 @@ export function BuyerAuthModal({
 
   // 4. Quick Preset Switch
   const handlePresetSelect = (preset: BuyerSession) => {
+    let rawDigits = preset.phone.replace(/[^0-9]/g, "");
+    if (rawDigits.startsWith("010")) rawDigits = rawDigits.slice(3);
+    const formatted =
+      rawDigits.length > 4 ? `${rawDigits.slice(0, 4)}-${rawDigits.slice(4)}` : rawDigits;
+
+    setPhoneSuffix(formatted);
+    setCompanyName(preset.companyName);
+    setContactName(preset.contactName);
+
     const session: BuyerSession = {
       ...preset,
       isAuthenticated: true,
@@ -206,46 +255,71 @@ export function BuyerAuthModal({
             <div className="flex-grow border-t border-slate-200" />
           </div>
 
-          {/* SECTION 3: 【2위 추천】 휴대폰 번호 4자리 간편 인증 (비밀번호 없음!) */}
+          {/* SECTION 3: 【2위 추천】 휴대폰 번호 간편 인증 (010 및 하이픈 자동 처리!) */}
           <form onSubmit={handlePhoneLogin} className="space-y-3">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
-                <span>휴대폰 번호</span>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-slate-700">
+                  휴대폰 번호
+                </label>
                 {matchedBuyer && (
                   <span className="text-[11px] font-extrabold text-[#FF7B00] flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" />
+                    <CheckCircle2 className="w-3.5 h-3.5" />
                     등록 거래처: {matchedBuyer.companyName}
                   </span>
                 )}
-              </label>
+              </div>
+
+              {/* 010 고정 Prefix + 뒷 8자리 자동 하이픈 통합 입력창 */}
               <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <div className="flex-1 flex rounded-xl border border-slate-300 overflow-hidden focus-within:border-[#FF7B00] focus-within:ring-2 focus-within:ring-[#FF7B00]/20 bg-white transition-all shadow-xs">
+                  {/* Fixed 010 Badge */}
+                  <div className="px-3 py-2 bg-slate-100 border-r border-slate-200 text-slate-800 font-extrabold text-xs flex items-center gap-1 select-none shrink-0">
+                    <Phone className="w-3.5 h-3.5 text-[#FF7B00]" />
+                    <span>010</span>
+                    <span className="text-slate-400 font-normal">-</span>
+                  </div>
+
+                  {/* Suffix Input (8 Digits with auto-hyphen) */}
                   <input
                     type="tel"
-                    value={phone}
-                    onChange={handlePhoneChange}
-                    placeholder="010-1234-5678"
-                    className="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 rounded-lg font-medium focus:outline-none focus:border-[#FF7B00] focus:ring-1 focus:ring-[#FF7B00]"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={phoneSuffix}
+                    onChange={handlePhoneSuffixChange}
+                    placeholder="1234-5678 (뒷 번호만 입력)"
+                    className="w-full px-3 py-2 text-xs font-bold tracking-wider text-slate-900 focus:outline-none bg-transparent placeholder:text-slate-400 placeholder:font-normal"
                     required
                   />
                 </div>
+
                 <button
                   type="button"
                   onClick={handleSendOtp}
-                  className="px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs whitespace-nowrap border border-slate-300 transition-colors cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs whitespace-nowrap border border-slate-300 transition-colors cursor-pointer shrink-0"
                 >
                   {otpSent ? "재전송" : "인증요청"}
                 </button>
               </div>
+
+              {/* Helpful UX Note */}
+              <p className="text-[11px] text-slate-500 mt-1.5 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#FF7B00] shrink-0" />
+                <span>
+                  <strong>010</strong> 및 <strong>하이픈(-)</strong>은 자동 입력됩니다. 뒷 8자리 숫자만 누르시면 됩니다.
+                </span>
+              </p>
             </div>
 
             {/* OTP Code Input (Passwordless) */}
             {otpSent && (
-              <div className="animate-in fade-in slide-in-from-top-1 duration-200 space-y-1">
-                <label className="block text-[11px] font-bold text-slate-600">
-                  인증번호 4자리
-                </label>
+              <div className="animate-in fade-in slide-in-from-top-1 duration-200 space-y-1 bg-orange-50/60 p-2.5 rounded-xl border border-orange-200">
+                <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                  <span>인증번호 4자리 입력</span>
+                  <span className="text-slate-500 font-normal">
+                    테스트 인증코드: <strong className="text-[#FF7B00] font-bold">1234</strong>
+                  </span>
+                </div>
                 <div className="flex gap-2 items-center">
                   <input
                     type="text"
@@ -253,11 +327,11 @@ export function BuyerAuthModal({
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value)}
                     placeholder="1234"
-                    className="w-32 px-3 py-1.5 text-center text-sm font-black tracking-widest border border-slate-300 rounded-lg focus:outline-none focus:border-[#FF7B00]"
+                    className="w-32 px-3 py-1.5 text-center text-sm font-black tracking-widest border border-slate-300 rounded-lg focus:outline-none focus:border-[#FF7B00] bg-white"
                     autoFocus
                   />
                   <span className="text-[11px] text-slate-500">
-                    💡 테스트 인증코드: <strong className="text-[#FF7B00]">1234</strong>
+                    인증번호를 누르고 아래 로그인 버튼을 클릭하세요.
                   </span>
                 </div>
               </div>
@@ -274,7 +348,7 @@ export function BuyerAuthModal({
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   placeholder="예: 영림인테리어 디자인"
-                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:border-[#FF7B00]"
+                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:outline-none focus:border-[#FF7B00]"
                   required
                 />
               </div>
