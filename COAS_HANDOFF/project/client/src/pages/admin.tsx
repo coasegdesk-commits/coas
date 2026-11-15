@@ -578,7 +578,7 @@ export default function AdminPage() {
       {/* Main Workspace (Full Width & Horizontal Slide Drawer with Single Center Tab) */}
       <div className="w-full pl-2 sm:pl-3 lg:pl-3 pr-2 sm:pr-3 lg:pr-4 py-3 sm:py-4 flex-1 flex flex-col lg:flex-row gap-3.5 lg:gap-4 min-w-0 items-start">
         {/* Left Navigation Sidebar Wrapper (Horizontal Slide Drawer) */}
-        <div className="relative shrink-0 flex items-stretch select-none z-20 self-start">
+        <div className="relative shrink-0 flex items-center select-none z-20 self-start">
           {/* Collapsible Sidebar Body (좌측에서 우측으로 수평 슬라이딩 돌출) */}
           <aside
             className={`transition-all duration-300 ease-in-out overflow-hidden ${
@@ -648,40 +648,44 @@ export default function AdminPage() {
             </div>
           </aside>
 
-          {/* Interactive Slide Rail & Center Grip Tab (표시된 우측 전체 세로 영역에서 버튼 효과 구현) */}
+          {/* Center Grip Tab (표시 부분만 호버 시 컬러 변경 & 수평 열기/닫기 슬라이딩 유지) */}
           <button
             type="button"
             onClick={toggleSidebar}
             data-testid="button-sidebar-center-grip-tab"
             title={isSidebarOpen ? "사이드바 메뉴 접기 (클릭)" : "사이드바 메뉴 펼치기 (클릭)"}
-            className={`hidden lg:flex flex-col items-center justify-between cursor-pointer transition-all group/rail select-none shrink-0 z-30 ${
+            className={`hidden lg:flex w-[18px] h-16 flex-col items-center justify-between py-1.5 cursor-pointer transition-all group select-none shrink-0 z-30 self-center ${
               isSidebarOpen
-                ? "-ml-[22px] w-[22px] self-stretch py-2.5 hover:bg-orange-50/70 hover:border-r-2 hover:border-[#FF7B00] rounded-r-xl border-0 shadow-none text-slate-400 hover:text-[#FF7B00]"
-                : "self-center w-[18px] h-16 py-1.5 border border-l-0 border-gray-300 hover:border-[#FF7B00] bg-white hover:bg-orange-50 text-slate-500 hover:text-[#FF7B00] rounded-r-md shadow-xs"
+                ? "-ml-[22px] border-0 shadow-none bg-transparent hover:bg-orange-50 text-slate-400 hover:text-[#FF7B00] rounded-md"
+                : "border border-l-0 border-gray-300 hover:border-[#FF7B00] bg-white hover:bg-orange-50 text-slate-500 hover:text-[#FF7B00] rounded-r-md shadow-xs"
             }`}
           >
-            {isSidebarOpen ? (
-              <div className="flex-1 flex flex-col items-center justify-between w-full h-full">
-                {/* 상단 인터랙티브 레일 라인 (호버 시 은은한 가이드 라인 효과) */}
-                <div className="w-[1.5px] flex-1 bg-transparent group-hover/rail:bg-orange-300/80 transition-colors my-2 rounded-full" />
+            {/* 상단 < 화살표 */}
+            <ChevronLeft
+              className={`w-3 h-3 transition-colors ${
+                isSidebarOpen
+                  ? "text-slate-400 group-hover:text-[#FF7B00]"
+                  : "rotate-180 text-orange-500"
+              }`}
+            />
 
-                {/* 중앙 탭 핸들 (< :: > 6점 포인트) */}
-                <div className="flex flex-col items-center justify-between h-16 w-[18px] py-1.5 rounded-md transition-all group-hover/rail:bg-orange-100/90 group-hover/rail:shadow-xs">
-                  <ChevronLeft className="w-3 h-3 text-slate-400 group-hover/rail:text-[#FF7B00] transition-colors" />
-                  <GripVertical className="w-3.5 h-3.5 text-slate-400 group-hover/rail:text-[#FF7B00] transition-colors" />
-                  <ChevronRight className="w-3 h-3 text-slate-400 group-hover/rail:text-[#FF7B00] transition-colors" />
-                </div>
+            {/* 중간 6점 도트 포인트 */}
+            <GripVertical
+              className={`w-3.5 h-3.5 transition-colors ${
+                isSidebarOpen
+                  ? "text-slate-400 group-hover:text-[#FF7B00]"
+                  : "text-slate-600 group-hover:text-[#FF7B00]"
+              }`}
+            />
 
-                {/* 하단 인터랙티브 레일 라인 (호버 시 은은한 가이드 라인 효과) */}
-                <div className="w-[1.5px] flex-1 bg-transparent group-hover/rail:bg-orange-300/80 transition-colors my-2 rounded-full" />
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-between h-full w-full">
-                <ChevronLeft className="w-3 h-3 rotate-180 text-orange-500" />
-                <GripVertical className="w-3.5 h-3.5 text-slate-600 group-hover/rail:text-[#FF7B00] transition-colors" />
-                <ChevronRight className="w-3 h-3 rotate-180 text-orange-500" />
-              </div>
-            )}
+            {/* 하단 > 화살표 */}
+            <ChevronRight
+              className={`w-3 h-3 transition-colors ${
+                isSidebarOpen
+                  ? "text-slate-400 group-hover:text-[#FF7B00]"
+                  : "rotate-180 text-orange-500"
+              }`}
+            />
           </button>
         </div>
 
