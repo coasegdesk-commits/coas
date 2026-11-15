@@ -83,6 +83,9 @@ import { BuyerAuthModal } from "@/components/order/BuyerAuthModal";
 import {
   type OrderLayoutPreset,
   loadAllPresets,
+  saveCustomPresets,
+  setDefaultPresetId,
+  MAX_CUSTOM_PRESETS,
 } from "@/lib/order-presets";
 import {
   type OrderHistoryRecord,
@@ -859,6 +862,15 @@ export default function OrderPage() {
     scaled[1] = Math.max(MIN_COL_WIDTHS[1], scaled[1] + diff);
     setOrientation(nextOrient);
     setColWidths(scaled);
+    try {
+      const all = loadAllPresets();
+      const matched = all.find(
+        (p) => p.orientation === nextOrient && p.rowCount === items.length,
+      );
+      if (matched) {
+        setActivePresetId(matched.id);
+      }
+    } catch {}
   };
 
   const handleFitToScreen = () => {
@@ -876,7 +888,16 @@ export default function OrderPage() {
     setRowHeightDraft(String(clamped));
   };
 
-  const [activePresetId, setActivePresetId] = useState<string>("builtin-std-20");
+  const [activePresetId, setActivePresetId] = useState<string>(() => {
+    if (typeof window === "undefined") return "builtin-portrait-15";
+    try {
+      const all = loadAllPresets();
+      const def = all.find((p) => p.isDefault);
+      return def ? def.id : "builtin-portrait-15";
+    } catch {
+      return "builtin-portrait-15";
+    }
+  });
 
   const handleApplyLayoutPreset = (preset: OrderLayoutPreset) => {
     setActivePresetId(preset.id);
@@ -895,6 +916,22 @@ export default function OrderPage() {
       setZoomPct(preset.zoomPct);
     }
   };
+
+  // On mount: check for user default preset from order-presets
+  useEffect(() => {
+    try {
+      const all = loadAllPresets();
+      const defaultPreset = all.find((p) => p.isDefault);
+      if (defaultPreset) {
+        setActivePresetId(defaultPreset.id);
+        const draft = loadOrderDraft();
+        const isEmptyDraft = draft.items.every((r) => !r.productName.trim());
+        if (!draft.activeSession && isEmptyDraft) {
+          handleApplyLayoutPreset(defaultPreset);
+        }
+      }
+    } catch {}
+  }, []);
 
   // Right Drawer: Customer Order History State & Handlers
   const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
@@ -1099,25 +1136,83 @@ export default function OrderPage() {
 
   const handleSaveDefaultPrefs = () => {
     try {
+      const all = loadAllPresets();
+      // 1. Check if an existing preset matches current orientation and row count
+      let matched = all.find(
+        (p) =>
+          p.orientation === orientation &&
+          p.rowCount === items.length,
+      );
+
+      let targetId = matched?.id;
+      let targetName = matched?.name;
+
+      // 2. If no preset matches (e.g. customized row count/colWidths), create a new custom preset
+      if (!matched) {
+        const customs = all.filter((p) => !p.isBuiltIn);
+        if (customs.length < MAX_CUSTOM_PRESETS) {
+          const newPreset: OrderLayoutPreset = {
+            id: `custom-${Date.now()}`,
+            name: `내 기본 양식 (${orientation === "landscape" ? "가로" : "세로"} ${items.length}행)`,
+            orientation,
+            rowCount: items.length,
+            rowHeightPx,
+            colWidths: [...colWidths],
+            zoomPct,
+            isBuiltIn: false,
+            isDefault: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          saveCustomPresets([...customs, newPreset]);
+          targetId = newPreset.id;
+          targetName = newPreset.name;
+        }
+      }
+
+      // 3. Mark target preset as default
+      if (targetId) {
+        setDefaultPresetId(targetId);
+        setActivePresetId(targetId);
+      }
+
+      // 4. Save view prefs cache with row count & presetId
       localStorage.setItem(
         "coas_order_view_prefs_v1",
         JSON.stringify({
           zoomPct,
           orientation,
+          rowCount: items.length,
           rowHeightPx,
           colWidths,
+          presetId: targetId,
         }),
       );
+
+      // 5. Notify LayoutPresetManager and active components
+      window.dispatchEvent(
+        new CustomEvent("coas-preset-change", { detail: { id: targetId } }),
+      );
+
       toast({
-        title: "내 기본 보기·용지 설정이 저장되었습니다.",
-        description: `배율 ${zoomPct}% · ${orientation === "landscape" ? "A4 가로" : "A4 세로"} · 행 높이 ${rowHeightPx}px`,
+        title: "현재 설정이 기본값으로 저장되었습니다.",
+        description: `[${targetName || `${items.length}행`}] (${
+          orientation === "landscape" ? "A4 가로" : "A4 세로"
+        } · ${items.length}행 · 행높이 ${rowHeightPx}px)이 기본 양식으로 지정되었습니다.`,
       });
-    } catch {}
+    } catch (err) {
+      console.error("Failed to save default prefs:", err);
+    }
   };
 
   const handleRestoreDefaultPrefs = () => {
     try {
       localStorage.removeItem("coas_order_view_prefs_v1");
+      setDefaultPresetId("builtin-std-20");
+      setActivePresetId("builtin-std-20");
+      window.dispatchEvent(
+        new CustomEvent("coas-preset-change", { detail: { id: "builtin-std-20" } }),
+      );
     } catch {}
     setZoomPct(100);
     setOrientation("portrait");
@@ -1125,8 +1220,9 @@ export default function OrderPage() {
     setRowHeightDraft("32");
     setColWidths(DEFAULT_COL_WIDTHS);
     setColsCustomEdited(false);
+    setTargetRowCount(20);
     toast({
-      title: "당사 기본값(A4 세로 · 100% · 32px)으로 복원되었습니다.",
+      title: "당사 기본값(A4 세로 · 20행 · 100% · 32px)으로 복원되었습니다.",
     });
   };
 
@@ -2129,6 +2225,16 @@ export default function OrderPage() {
       customCount ??
       (preset === "custom" ? items.length : parseInt(preset, 10));
     setTargetRowCount(targetCount, preset);
+
+    try {
+      const all = loadAllPresets();
+      const matched = all.find(
+        (p) => p.orientation === orientation && p.rowCount === targetCount,
+      );
+      if (matched) {
+        setActivePresetId(matched.id);
+      }
+    } catch {}
   };
 
   const addRows = (count = 5) => {

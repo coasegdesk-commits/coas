@@ -44,24 +44,32 @@ export function LayoutPresetManager({
   const [newPresetName, setNewPresetName] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Load presets on mount
+  // Load presets on mount and listen for preset change events
   useEffect(() => {
-    setPresets(loadAllPresets());
+    const reload = () => setPresets(loadAllPresets());
+    reload();
+    window.addEventListener("coas-preset-change", reload);
+    window.addEventListener("storage", reload);
+    return () => {
+      window.removeEventListener("coas-preset-change", reload);
+      window.removeEventListener("storage", reload);
+    };
   }, []);
 
   const customCount = presets.filter((p) => !p.isBuiltIn).length;
 
-  // Determine active preset by ID or by matching settings
-  const matchedPreset =
-    presets.find((p) => p.id === activePresetId) ||
-    presets.find(
-      (p) =>
-        p.orientation === currentSettings.orientation &&
-        p.rowCount === currentSettings.rowCount &&
-        p.rowHeightPx === currentSettings.rowHeightPx,
-    );
-
-  const activeId = activePresetId || matchedPreset?.id;
+  // Determine active preset:
+  // 1) Match current settings (orientation + rowCount)
+  // 2) Or match by activePresetId
+  // 3) Or default preset
+  const matchedBySettings = presets.find(
+    (p) =>
+      p.orientation === currentSettings.orientation &&
+      p.rowCount === currentSettings.rowCount,
+  );
+  const matchedById = presets.find((p) => p.id === activePresetId);
+  const activePreset = matchedBySettings || matchedById;
+  const activeId = activePreset?.id || activePresetId;
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -326,9 +334,9 @@ export function LayoutPresetManager({
       <div ref={dropdownRef} className="relative">
         <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 mb-1">
           <span>저장된 용지설정 (5개 스크롤)</span>
-          {matchedPreset && (
+          {activePreset && (
             <span className="text-[#FF7B00] font-black">
-              현재: {matchedPreset.name}
+              현재: {activePreset.name}
             </span>
           )}
         </div>
@@ -346,15 +354,15 @@ export function LayoutPresetManager({
           <div className="flex items-center gap-2 truncate">
             <BookmarkCheck className="w-3.5 h-3.5 text-[#FF7B00] shrink-0" />
             <span className="text-[11px] font-bold truncate">
-              {matchedPreset ? matchedPreset.name : "용지설정을 선택하세요"}
+              {activePreset ? activePreset.name : "용지설정을 선택하세요"}
             </span>
-            {matchedPreset && (
+            {activePreset && (
               <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-semibold shrink-0">
-                {matchedPreset.orientation === "landscape" ? "가로" : "세로"} ·{" "}
-                {matchedPreset.rowCount}행
+                {activePreset.orientation === "landscape" ? "가로" : "세로"} ·{" "}
+                {activePreset.rowCount}행
               </span>
             )}
-            {matchedPreset?.isDefault && (
+            {activePreset?.isDefault && (
               <span className="text-amber-500 text-[10px] flex items-center gap-0.5 font-bold shrink-0">
                 <Star className="w-2.5 h-2.5 fill-current" />
                 기본

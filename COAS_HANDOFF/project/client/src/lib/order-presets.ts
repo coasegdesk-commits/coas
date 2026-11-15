@@ -30,6 +30,18 @@ export const BUILTIN_LAYOUT_PRESETS: OrderLayoutPreset[] = [
     updatedAt: "2026-11-15T00:00:00.000Z",
   },
   {
+    id: "builtin-portrait-15",
+    name: "15행 실무형 (세로)",
+    orientation: "portrait",
+    rowCount: 15,
+    rowHeightPx: 32,
+    zoomPct: 100,
+    isBuiltIn: true,
+    isDefault: false,
+    createdAt: "2026-11-15T00:00:00.000Z",
+    updatedAt: "2026-11-15T00:00:00.000Z",
+  },
+  {
     id: "builtin-std-20",
     name: "20행 표준규격 (세로)",
     orientation: "portrait",
