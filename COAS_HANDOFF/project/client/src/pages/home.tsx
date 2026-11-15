@@ -51,7 +51,7 @@ export default function Home() {
       </Helmet>
 
       {/* Hero Section */}
-      <section className="relative h-[90vh] w-full overflow-hidden">
+      <section className="relative h-screen min-h-[640px] w-full overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-500"
           style={{ backgroundImage: `url("${resolveAssetUrl(hero.bgImageUrl)}")` }}

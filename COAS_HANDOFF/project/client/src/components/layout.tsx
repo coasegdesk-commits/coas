@@ -13,6 +13,9 @@ import {
   Lock,
   ClipboardList,
   ArrowLeft,
+  ArrowRight,
+  Minus,
+  ChevronUp,
   X,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
@@ -47,6 +50,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [ecatalogOpen, setEcatalogOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [isOrderBarMinimized, setIsOrderBarMinimized] = useState(false);
   const { cms } = useCmsBootstrap();
   const { itemCount, totalQty, hasActiveSession, dismissSession } =
     useOrderDraftSummary();
@@ -281,75 +285,127 @@ export function Layout({ children }: { children: React.ReactNode }) {
         language="ko"
       />
 
-      {/* Sticky Bottom Return-to-Order Floating Bar (Active when browsing Parts Index / New Products / Product Detail during an Order) */}
+      {/* Right Floating Return-to-Order Smart Dock (Active when browsing Parts Index / New Products / Product Detail / Home during an Order) */}
       {showOrderReturnBar && (
-        <div
-          data-testid="floating-order-return-bar"
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[95vw] max-w-5xl bg-slate-900/95 backdrop-blur-md text-white border-2 border-[#FF7B00] rounded-xl shadow-2xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-        >
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="w-3 h-3 rounded-full bg-[#FF7B00] animate-pulse shrink-0" />
-            <div className="min-w-0">
-              <div className="text-xs sm:text-sm font-bold flex flex-wrap items-center gap-2">
-                <span>작성 중인 발주서가 자동 보관 중입니다</span>
-                <span className="px-2 py-0.5 rounded-full bg-[#FF7B00]/20 border border-[#FF7B00] text-orange-300 text-xs font-extrabold">
-                  현재 담긴 품목: 총 {itemCount}종 (수량 {totalQty})
-                </span>
+        <>
+          {!isOrderBarMinimized ? (
+            <div
+              data-testid="floating-order-return-bar"
+              className="fixed bottom-6 right-6 z-50 w-[350px] max-w-[calc(100vw-32px)] bg-slate-900/95 backdrop-blur-md text-white border-2 border-[#FF7B00] rounded-2xl shadow-2xl p-4 flex flex-col gap-3 transition-all duration-300 animate-in fade-in slide-in-from-bottom-3"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#FF7B00] animate-pulse shrink-0" />
+                  <span className="text-xs font-bold text-white tracking-tight truncate">
+                    작성 중인 발주서 자동 보관
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setIsOrderBarMinimized(true)}
+                    title="미니 캡슐로 접기"
+                    className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                  {itemCount === 0 && (
+                    <button
+                      type="button"
+                      onClick={dismissSession}
+                      title="안내 창 닫기"
+                      className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
-              <p className="text-[11px] text-slate-300 truncate mt-0.5">
-                부품 인덱스·신제품·상세 도면을 확인하거나 [+ 발주서에 담기]를 누른 뒤 언제든 돌아가실 수 있습니다.
-              </p>
-            </div>
-          </div>
 
-          <div className="flex items-center justify-end gap-2 shrink-0">
-            {location !== "/parts-index" && (
-              <Link href="/parts-index">
+              {/* Count & Info */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] text-slate-400">담긴 품목</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#FF7B00]/20 border border-[#FF7B00] text-orange-300 text-xs font-black">
+                    총 {itemCount}종 (수량 {totalQty}개)
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-300 leading-snug">
+                  신제품·부품 탐색 후 언제든 발주서로 바로 복귀하실 수 있습니다.
+                </p>
+              </div>
+
+              {/* Main Action Return Button */}
+              <Link href="/order" className="w-full">
                 <Button
                   type="button"
                   size="sm"
-                  variant="outline"
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-600 text-xs font-semibold h-9"
+                  data-testid="button-return-to-order"
+                  className="w-full bg-[#FF7B00] hover:bg-[#e66f00] text-white font-extrabold text-xs sm:text-sm h-10 shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  부품인덱스 보기
+                  <ArrowLeft className="w-4 h-4" />
+                  작성 중이던 발주서로 돌아가기
                 </Button>
               </Link>
-            )}
-            {location !== "/new-products" && (
-              <Link href="/new-products">
-                <Button
+
+              {/* Sub Quick Navigation */}
+              <div className="flex items-center gap-1.5 pt-0.5">
+                {location !== "/parts-index" && (
+                  <Link href="/parts-index" className="flex-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 text-[11px] font-semibold h-7 px-2 cursor-pointer"
+                    >
+                      부품인덱스
+                    </Button>
+                  </Link>
+                )}
+                {location !== "/new-products" && (
+                  <Link href="/new-products" className="flex-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 text-[11px] font-semibold h-7 px-2 cursor-pointer"
+                    >
+                      신제품 보기
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div
+              data-testid="floating-order-return-pill"
+              className="fixed bottom-6 right-6 z-50 flex items-center gap-1 bg-slate-900/95 backdrop-blur-md text-white border-2 border-[#FF7B00] rounded-full shadow-2xl p-1.5 pr-2.5 transition-all duration-300 animate-in fade-in"
+            >
+              <Link href="/order">
+                <button
                   type="button"
-                  size="sm"
-                  variant="outline"
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-600 text-xs font-semibold h-9"
+                  className="flex items-center gap-2 px-2.5 py-1 text-xs font-bold text-white hover:text-[#FF7B00] transition-colors cursor-pointer"
                 >
-                  신제품 보기
-                </Button>
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#FF7B00] animate-pulse shrink-0" />
+                  <span>발주서 작성 중</span>
+                  <span className="px-1.5 py-0.5 rounded-full bg-[#FF7B00] text-white text-[11px] font-extrabold">
+                    {itemCount}종({totalQty})
+                  </span>
+                  <ArrowRight className="w-3.5 h-3.5 text-[#FF7B00]" />
+                </button>
               </Link>
-            )}
-            <Link href="/order">
-              <Button
-                type="button"
-                size="sm"
-                data-testid="button-return-to-order"
-                className="bg-[#FF7B00] hover:bg-[#e66f00] text-white font-extrabold text-xs sm:text-sm h-9 px-4 shadow-lg"
-              >
-                <ArrowLeft className="w-4 h-4 mr-1.5" />
-                작성 중이던 발주서로 돌아가기
-              </Button>
-            </Link>
-            {itemCount === 0 && (
               <button
                 type="button"
-                onClick={dismissSession}
-                title="안내 바 숨기기"
-                className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                onClick={() => setIsOrderBarMinimized(false)}
+                title="상세 카드 펼치기"
+                className="p-1 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <ChevronUp className="w-4 h-4" />
               </button>
-            )}
-          </div>
-        </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Footer */}
