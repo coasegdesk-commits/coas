@@ -852,6 +852,7 @@ export default function OrderPage() {
 
   const handleChangeOrientation = (nextOrient: "portrait" | "landscape") => {
     if (nextOrient === orientation) return;
+    setCustomMemoHeightPx(null);
     const targetSum = nextOrient === "landscape" ? 1027 : 698;
     const curSum = colWidths.reduce((a, b) => a + b, 0) || 698;
     const scale = targetSum / curSum;
@@ -901,6 +902,7 @@ export default function OrderPage() {
 
   const handleApplyLayoutPreset = (preset: OrderLayoutPreset) => {
     setActivePresetId(preset.id);
+    setCustomMemoHeightPx(null);
 
     if (preset.orientation !== orientation) {
       handleChangeOrientation(preset.orientation);
@@ -2183,6 +2185,27 @@ export default function OrderPage() {
     presetHint?: "10" | "15" | "20" | "25" | "30" | "custom";
   } | null>(null);
 
+  const [customMemoHeightPx, setCustomMemoHeightPx] = useState<number | null>(
+    null,
+  );
+
+  // Helper to find the index of the last row containing entered data (product, spec, qty, note)
+  const getLastFilledRowIndex = (rowList: typeof items) => {
+    for (let i = rowList.length - 1; i >= 0; i--) {
+      const r = rowList[i];
+      if (
+        r.productId ||
+        r.productName.trim() ||
+        r.spec.trim() ||
+        r.quantity.trim() ||
+        r.note.trim()
+      ) {
+        return i;
+      }
+    }
+    return -1;
+  };
+
   const itemsSnapshotRef = useRef(items);
   itemsSnapshotRef.current = items;
 
@@ -2236,6 +2259,7 @@ export default function OrderPage() {
     preset: "10" | "15" | "20" | "25" | "30" | "custom",
     customCount?: number,
   ) => {
+    setCustomMemoHeightPx(null);
     const targetCount =
       customCount ??
       (preset === "custom" ? items.length : parseInt(preset, 10));
@@ -2383,16 +2407,18 @@ export default function OrderPage() {
   // Interactive 6-Dot Drag Resizing between Line Items Table and 특기사항/배송메모 Table
   const isResizingMemoRef = useRef(false);
   const resizeStartYRef = useRef(0);
-  const resizeStartRowsRef = useRef(0);
-  const lastAppliedResizeRowsRef = useRef(0);
+  const resizeStartItemsLenRef = useRef(0);
+  const resizeStartCustomMemoHRef = useRef<number>(58);
   const [isResizingMemo, setIsResizingMemo] = useState(false);
 
   const handleStartMemoResize = (e: React.MouseEvent) => {
     e.preventDefault();
     isResizingMemoRef.current = true;
     resizeStartYRef.current = e.clientY;
-    resizeStartRowsRef.current = items.length;
-    lastAppliedResizeRowsRef.current = items.length;
+    resizeStartItemsLenRef.current = items.length;
+
+    const baseMemoH = orientation === "landscape" ? 46 : 58;
+    resizeStartCustomMemoHRef.current = customMemoHeightPx ?? baseMemoH;
     setIsResizingMemo(true);
 
     const stopResize = () => {
@@ -2405,39 +2431,67 @@ export default function OrderPage() {
     const onMouseMove = (moveEvt: MouseEvent) => {
       if (!isResizingMemoRef.current) return;
       const deltaY = moveEvt.clientY - resizeStartYRef.current;
-      // Dragging UP (deltaY < 0): expands memo upwards -> decreases row count
-      // Dragging DOWN (deltaY > 0): shrinks memo downwards -> increases row count
-      const rowDelta = Math.round(deltaY / 28);
-      const singleMaxRows = orientation === "landscape" ? 20 : 25;
-      const maxRows =
-        resizeStartRowsRef.current > singleMaxRows ? 200 : singleMaxRows;
-      const newCount = Math.max(
-        MIN_ORDER_ROW_COUNT,
-        Math.min(maxRows, resizeStartRowsRef.current + rowDelta),
-      );
-      if (newCount === lastAppliedResizeRowsRef.current) return;
+      // Dragging UP (deltaY < 0): expands memo upwards -> reduces empty rows
+      // Dragging DOWN (deltaY > 0): shrinks memo downwards -> increases rows or shrinks expanded memo
 
       const curItems = itemsSnapshotRef.current;
-      if (newCount < curItems.length) {
-        const hasDataInTail = curItems
-          .slice(newCount)
-          .some(
-            (r) =>
-              r.productId ||
-              r.productName.trim() ||
-              r.spec.trim() ||
-              r.quantity.trim() ||
-              r.note.trim(),
+      const lastFilledIdx = getLastFilledRowIndex(curItems);
+      const minKeepRows = Math.max(MIN_ORDER_ROW_COUNT, lastFilledIdx + 1);
+      const startLen = resizeStartItemsLenRef.current;
+      const baseMemoH = orientation === "landscape" ? 46 : 58;
+
+      if (deltaY < 0) {
+        // Dragging UPWARDS:
+        // 1. If curItems has trailing empty rows (startLen > minKeepRows):
+        //    Reduce empty items in items down to minKeepRows.
+        const emptyItemsToReduce = Math.max(0, startLen - minKeepRows);
+        const rowsDelta = Math.floor(-deltaY / 28);
+        const itemsToCut = Math.min(emptyItemsToReduce, rowsDelta);
+        const newLen = startLen - itemsToCut;
+
+        if (newLen !== curItems.length && newLen >= minKeepRows) {
+          setTargetRowCount(newLen, undefined, true);
+        }
+
+        // 2. Any additional upward drag beyond empty items expands customMemoHeightPx!
+        const leftoverUpPx = -deltaY - itemsToCut * 28;
+        if (leftoverUpPx > 0) {
+          const targetMemoH = Math.min(
+            450,
+            resizeStartCustomMemoHRef.current + leftoverUpPx,
           );
-        if (hasDataInTail) {
-          stopResize();
-          setPendingRowTrimConfirm({ targetCount: newCount });
-          return;
+          setCustomMemoHeightPx(Math.round(targetMemoH));
+        }
+      } else {
+        // Dragging DOWNWARDS:
+        // 1. If customMemoHeightPx was expanded above baseMemoH:
+        //    Shrink memo height back down towards baseMemoH!
+        const memoExpansion = Math.max(
+          0,
+          resizeStartCustomMemoHRef.current - baseMemoH,
+        );
+        if (memoExpansion > 0) {
+          const newMemoH = Math.max(
+            baseMemoH,
+            resizeStartCustomMemoHRef.current - deltaY,
+          );
+          setCustomMemoHeightPx(
+            newMemoH <= baseMemoH ? null : Math.round(newMemoH),
+          );
+        }
+
+        // 2. If memo is at or returned to baseMemoH, dragging downwards adds rows!
+        const leftoverDownPx = deltaY - memoExpansion;
+        if (leftoverDownPx > 0) {
+          const singleMaxRows = orientation === "landscape" ? 20 : 25;
+          const maxRows = startLen > singleMaxRows ? 200 : singleMaxRows;
+          const addCount = Math.floor(leftoverDownPx / 28);
+          const targetCount = Math.min(maxRows, startLen + addCount);
+          if (targetCount !== curItems.length) {
+            setTargetRowCount(targetCount);
+          }
         }
       }
-
-      lastAppliedResizeRowsRef.current = newCount;
-      setTargetRowCount(newCount);
     };
 
     const onMouseUp = () => {
@@ -2463,14 +2517,21 @@ export default function OrderPage() {
     const singlePageMaxRows = orientation === "landscape" ? 20 : 25;
     const minOuterRowPx = orientation === "landscape" ? 21 : 26;
 
+    const baseMemoH = orientation === "landscape" ? 46 : 58;
+    const effectiveMemoH =
+      customMemoHeightPx !== null
+        ? Math.max(baseMemoH, customMemoHeightPx)
+        : baseMemoH;
+    const extraMemoH = effectiveMemoH - baseMemoH;
+
     const singlePageBodyBudget =
-      innerSheetH - firstPageTopChrome - lastPageMinBottomChrome; // 664 portrait | 422 landscape
+      innerSheetH - firstPageTopChrome - lastPageMinBottomChrome - extraMemoH; // 664 portrait | 422 landscape
     const firstPageBodyBudget = innerSheetH - firstPageTopChrome; // 764 portrait | 507 landscape
     const midPageBodyBudget = innerSheetH - nextPageTopChrome; // 972 portrait | 681 landscape
     const lastPageFitBudget =
-      innerSheetH - nextPageTopChrome - lastPageMinBottomChrome; // 872 portrait | 596 landscape
+      innerSheetH - nextPageTopChrome - lastPageMinBottomChrome - extraMemoH; // 872 portrait | 596 landscape
     const lastPageFillerBudget =
-      innerSheetH - nextPageTopChrome - lastPageComfortBottomChrome; // 854 portrait | 583 landscape
+      innerSheetH - nextPageTopChrome - lastPageComfortBottomChrome - extraMemoH; // 854 portrait | 583 landscape
 
     const getRowRequiredOuterPx = (
       row: (typeof items)[number],
@@ -2679,7 +2740,7 @@ export default function OrderPage() {
     }
 
     return pages;
-  }, [items, orientation, rowHeightPx, colWidths, catalogList]);
+  }, [items, orientation, rowHeightPx, colWidths, catalogList, customMemoHeightPx]);
 
   const pageRowCapacity = orientation === "landscape" ? 20 : 25;
 
@@ -6389,25 +6450,30 @@ export default function OrderPage() {
                                 {isResizingMemo && (
                                   <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-30 px-2.5 py-0.5 rounded bg-[#FF7B00] text-white text-[10.5px] font-black shadow-lg flex items-center gap-1 whitespace-nowrap pointer-events-none">
                                     <span>행 수: {items.length}행</span>
-                                    <span className="text-orange-100 text-[9px] font-normal">
-                                      ({items.length <= MIN_ORDER_ROW_COUNT
-                                        ? `최소 ${MIN_ORDER_ROW_COUNT}행`
-                                        : a4Pages.length === 1 &&
-                                            items.length >=
-                                              (orientation === "landscape"
-                                                ? 20
-                                                : 25)
-                                          ? "1장 최대"
-                                          : items.length >= 200
-                                            ? "최대"
-                                            : "조절 중"})
-                                    </span>
+                                    {customMemoHeightPx !== null ? (
+                                      <span className="text-orange-100 text-[9px] font-normal">
+                                        (메모 높이 {customMemoHeightPx}px · 빈행
+                                        축소)
+                                      </span>
+                                    ) : (
+                                      <span className="text-orange-100 text-[9px] font-normal">
+                                        (빈행 조절)
+                                      </span>
+                                    )}
                                     <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#FF7B00]" />
                                   </div>
                                 )}
                               </div>
 
                               <div
+                                style={
+                                  customMemoHeightPx !== null
+                                    ? {
+                                        height: `${customMemoHeightPx}px`,
+                                        minHeight: `${customMemoHeightPx}px`,
+                                      }
+                                    : undefined
+                                }
                                 className={`flex-1 ${
                                   orientation === "landscape"
                                     ? "min-h-[46px]"
@@ -6560,20 +6626,48 @@ export default function OrderPage() {
               <span>표 행 수 축소 확인</span>
             </DialogTitle>
           </DialogHeader>
-          <div className="py-2 text-xs leading-relaxed text-slate-700">
-            {pendingRowTrimConfirm && (
-              <p>
-                표 행 수를{" "}
-                <strong className="text-[#FF7B00] font-extrabold">
-                  {pendingRowTrimConfirm.targetCount}행
-                </strong>
-                으로 줄이시면{" "}
-                <strong className="text-slate-900 font-extrabold">
-                  {pendingRowTrimConfirm.targetCount + 1}번째 행 이후
-                </strong>
-                에 입력된 품목 내용이 삭제됩니다. 계속 진행하시겠습니까?
-              </p>
-            )}
+          <div className="py-2 text-xs leading-relaxed text-slate-700 space-y-1">
+            {pendingRowTrimConfirm && (() => {
+              const target = pendingRowTrimConfirm.targetCount;
+              const startRow = target + 1;
+              const endRow = items.length;
+              const deletedItems = items.slice(target);
+              const filledDeletedCount = deletedItems.filter(
+                (r) =>
+                  r.productId ||
+                  r.productName.trim() ||
+                  r.spec.trim() ||
+                  r.quantity.trim() ||
+                  r.note.trim(),
+              ).length;
+              const rowRangeText =
+                startRow === endRow
+                  ? `${startRow}번째 행`
+                  : `${startRow}번째 ~ ${endRow}번째 행`;
+
+              return (
+                <>
+                  <p>
+                    표 행 수를{" "}
+                    <strong className="text-[#FF7B00] font-extrabold">
+                      {target}행
+                    </strong>
+                    으로 줄이시면{" "}
+                    <strong className="text-slate-900 font-extrabold">
+                      {rowRangeText}
+                    </strong>
+                    에 이미 입력된 품목 내용
+                    {filledDeletedCount > 0
+                      ? ` (총 ${filledDeletedCount}건)`
+                      : ""}
+                    이 삭제됩니다.
+                  </p>
+                  <p className="text-slate-500 font-medium">
+                    계속 진행하시겠습니까?
+                  </p>
+                </>
+              );
+            })()}
           </div>
           <DialogFooter className="gap-2 sm:gap-2">
             <Button
