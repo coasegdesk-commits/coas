@@ -83,9 +83,7 @@ export function AdminInventoryTab() {
   const fetchInventory = async () => {
     setLoading(true);
     try {
-      const res = await adminFetch("/api/admin/inventory");
-      if (!res.ok) throw new Error("재고 데이터를 불러오지 못했습니다.");
-      const data: InventorySummary = await res.json();
+      const data = await adminFetch<InventorySummary>("/api/admin/inventory");
       setSummary(data);
       setItems(data.items || []);
     } catch (err: any) {
@@ -107,7 +105,7 @@ export function AdminInventoryTab() {
   const handleQuickAdjust = async (item: InventoryItem, delta: number) => {
     try {
       const type = delta > 0 ? "inbound" : "outbound";
-      const res = await adminFetch(`/api/admin/inventory/${item.id}/adjust`, {
+      await adminFetch(`/api/admin/inventory/${item.id}/adjust`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -117,11 +115,6 @@ export function AdminInventoryTab() {
           operator: "현장관리자",
         }),
       });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "재고 조정 실패");
-      }
 
       toast({
         title: "재고 수량 반영 완료",
@@ -152,7 +145,7 @@ export function AdminInventoryTab() {
 
     setAdjustSubmitting(true);
     try {
-      const res = await adminFetch(`/api/admin/inventory/${adjustItem.id}/adjust`, {
+      await adminFetch(`/api/admin/inventory/${adjustItem.id}/adjust`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -162,11 +155,6 @@ export function AdminInventoryTab() {
           operator: adjustOperator.trim() || "관리자",
         }),
       });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "재고 조정 처리 실패");
-      }
 
       toast({
         title: "재고 조정 완료",
@@ -203,16 +191,11 @@ export function AdminInventoryTab() {
       const url = isEdit ? `/api/admin/inventory/${editingItem.id}` : "/api/admin/inventory";
       const method = isEdit ? "PATCH" : "POST";
 
-      const res = await adminFetch(url, {
+      await adminFetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editingItem),
       });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "저장 실패");
-      }
 
       toast({
         title: isEdit ? "품목 정보 수정 완료" : "신규 품목 등록 완료",
@@ -239,14 +222,9 @@ export function AdminInventoryTab() {
     }
 
     try {
-      const res = await adminFetch(`/api/admin/inventory/${item.id}`, {
+      await adminFetch(`/api/admin/inventory/${item.id}`, {
         method: "DELETE",
       });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "삭제 실패");
-      }
 
       toast({
         title: "품목 삭제 완료",
