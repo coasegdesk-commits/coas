@@ -2949,7 +2949,7 @@ export default function OrderPage() {
           if (field === "productName") {
             bindProductField(cells[0]);
           } else {
-            (updated as Record<string, string | undefined>)[field] = cells[0];
+            (updated as unknown as Record<string, any>)[field] = cells[0];
           }
         } else {
           cells.forEach((cellVal, cOffset) => {
@@ -2958,7 +2958,7 @@ export default function OrderPage() {
             if (field === "productName") {
               bindProductField(cellVal);
             } else {
-              (updated as Record<string, string | undefined>)[field] = cellVal;
+              (updated as unknown as Record<string, any>)[field] = cellVal;
             }
           });
           if (!updated.quantity) updated.quantity = "1";

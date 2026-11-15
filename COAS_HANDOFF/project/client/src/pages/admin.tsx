@@ -28,6 +28,8 @@ import { AdminECatalogTab } from "@/components/admin/admin-ecatalog-tab";
 import { AdminSubmissionsTab } from "@/components/admin/admin-submissions-tab";
 import { AdminRecommendationsTab } from "@/components/admin/admin-recommendations-tab";
 import { AdminB2BAccountsTab } from "@/components/admin/admin-b2b-accounts-tab";
+import { AdminDispatchTab } from "@/components/admin/admin-dispatch-tab";
+import { AdminRevenueStatsTab } from "@/components/admin/admin-revenue-stats-tab";
 import type {
   CatalogRequestRecord,
   CmsProduct,
@@ -58,6 +60,8 @@ import {
   ArrowRight,
   ShieldCheck,
   Building2,
+  Truck,
+  BarChart3,
 } from "lucide-react";
 
 interface AdminOverviewData {
@@ -77,13 +81,15 @@ interface AdminOverviewData {
 
 type AdminTabId =
   | "overview"
+  | "dispatch"
+  | "revenue-stats"
+  | "b2b-accounts"
+  | "submissions"
+  | "recommendations"
   | "design"
   | "new-products"
   | "parts"
-  | "recommendations"
-  | "ecatalog"
-  | "submissions"
-  | "b2b-accounts";
+  | "ecatalog";
 
 export default function AdminPage() {
   const { toast } = useToast();
@@ -384,22 +390,24 @@ export default function AdminPage() {
     badge?: number;
   }[] = [
     { id: "overview", label: "대시보드 요약", icon: LayoutDashboard },
-    { id: "recommendations", label: "추천 부속 · 출고학습", icon: Star },
-    { id: "design", label: "홈 · 디자인 · 회사정보", icon: Palette },
-    { id: "new-products", label: "신제품 등록 · 관리", icon: Sparkles },
-    { id: "parts", label: "부품 인덱스 · 상세도면", icon: Layers },
-    { id: "ecatalog", label: "전자카탈로그 관리", icon: BookOpen },
+    { id: "dispatch", label: "일일 출고장 · 배송 관리", icon: Truck },
+    { id: "revenue-stats", label: "매출 통계 · 경영 분석", icon: BarChart3 },
+    {
+      id: "b2b-accounts",
+      label: "거래처 · 번호인증 관리",
+      icon: Building2,
+    },
     {
       id: "submissions",
       label: "발주서 · 문의 · 신청 내역",
       icon: ClipboardList,
       badge: totalUnread,
     },
-    {
-      id: "b2b-accounts",
-      label: "거래처 · 번호인증 관리",
-      icon: Building2,
-    },
+    { id: "recommendations", label: "추천 부속 · 출고학습", icon: Star },
+    { id: "new-products", label: "신제품 등록 · 관리", icon: Sparkles },
+    { id: "parts", label: "부품 인덱스 · 상세도면", icon: Layers },
+    { id: "ecatalog", label: "전자카탈로그 관리", icon: BookOpen },
+    { id: "design", label: "홈 · 디자인 · 회사정보", icon: Palette },
   ];
 
   return (
@@ -795,6 +803,14 @@ export default function AdminPage() {
               learnedOrderIds={data.affinity?.learnedOrderIds || []}
               onSaved={loadOverview}
             />
+          )}
+
+          {activeTab === "dispatch" && (
+            <AdminDispatchTab />
+          )}
+
+          {activeTab === "revenue-stats" && (
+            <AdminRevenueStatsTab />
           )}
 
           {activeTab === "b2b-accounts" && (

@@ -14,6 +14,11 @@ import {
 } from "./egdesk-sync";
 import { partAffinityStore } from "./part-affinity";
 import { b2bStore } from "./b2b-store";
+import {
+  getDailyDispatchSummary,
+  getAccountRevenueBreakdown,
+  getRevenueKpiSummary,
+} from "./order-analytics";
 
 const apiKey =
   process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
@@ -885,6 +890,93 @@ export async function registerRoutes(
   app.post("/api/admin/restore", requireAdmin, (req, res) => {
     cmsStore.restoreBackup(req.body || {});
     res.json({ success: true });
+  });
+
+  // --- Daily Dispatch & Shipping Management ---
+  app.get("/api/admin/dispatch-daily", requireAdmin, async (req, res) => {
+    try {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const targetDate =
+        typeof req.query.date === "string" && req.query.date
+          ? req.query.date
+          : todayStr;
+      const orders = cmsStore.getSubmissions().orders;
+      const summary = getDailyDispatchSummary(orders, targetDate);
+      res.json(summary);
+    } catch (err: any) {
+      res
+        .status(500)
+        .json({ error: err.message || "Failed to load daily dispatch" });
+    }
+  });
+
+  app.patch("/api/admin/orders/:id/shipping", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updated = cmsStore.updateOrderShipping(id, req.body || {});
+      if (!updated) {
+        return res.status(404).json({ error: "주문을 찾을 수 없습니다." });
+      }
+      void syncOrderToEgdesk(updated);
+      res.json({ success: true, order: updated });
+    } catch (err: any) {
+      res
+        .status(500)
+        .json({ error: err.message || "Failed to update shipping" });
+    }
+  });
+
+  app.post("/api/admin/orders/batch-shipping", requireAdmin, async (req, res) => {
+    try {
+      const { orderIds, shippingStatus, shippingCarrier } = req.body || {};
+      if (!Array.isArray(orderIds) || !shippingStatus) {
+        return res
+          .status(400)
+          .json({ error: "주문 목록 및 상태가 필요합니다." });
+      }
+      const results: any[] = [];
+      for (const oid of orderIds) {
+        const updated = cmsStore.updateOrderShipping(oid, {
+          shippingStatus,
+          ...(shippingCarrier ? { shippingCarrier } : {}),
+        });
+        if (updated) {
+          results.push(updated);
+          void syncOrderToEgdesk(updated);
+        }
+      }
+      res.json({ success: true, count: results.length, orders: results });
+    } catch (err: any) {
+      res
+        .status(500)
+        .json({ error: err.message || "Failed to batch update shipping" });
+    }
+  });
+
+  // --- Account Revenue & Business Analytics ---
+  app.get("/api/admin/account-revenue", requireAdmin, async (_req, res) => {
+    try {
+      const orders = cmsStore.getSubmissions().orders;
+      const accounts = getAccountRevenueBreakdown(orders);
+      res.json({ accounts, totalCount: accounts.length });
+    } catch (err: any) {
+      res
+        .status(500)
+        .json({ error: err.message || "Failed to load account revenue" });
+    }
+  });
+
+  app.get("/api/admin/revenue-stats", requireAdmin, async (req, res) => {
+    try {
+      const period = (req.query.period as any) || "monthly";
+      const orders = cmsStore.getSubmissions().orders;
+      const stats = getRevenueKpiSummary(orders, period);
+      res.json(stats);
+    } catch (err: any) {
+      res
+        .status(500)
+        .json({ error: err.message || "Failed to load revenue stats" });
+    }
   });
 
   // Dynamic sitemap.xml

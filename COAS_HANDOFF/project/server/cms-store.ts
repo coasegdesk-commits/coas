@@ -22,7 +22,9 @@ import type {
   SidebarFilterCategory,
   SiteDesignSettings,
   SubmissionStatus,
+  ShippingStatus,
 } from "@shared/cms-types";
+import { normalizeOrderRecord, buildInitialSampleOrders } from "./order-analytics";
 
 const PROJECT_ROOT = fs.existsSync(path.join(process.cwd(), "attached_assets"))
   ? process.cwd()
@@ -109,9 +111,14 @@ class CmsStore {
       try {
         const raw = fs.readFileSync(STORE_PATH, "utf-8");
         const parsed = JSON.parse(raw) as CmsStoreData;
+        const loadedOrders =
+          Array.isArray(parsed.orders) && parsed.orders.length > 0
+            ? parsed.orders.map(normalizeOrderRecord)
+            : buildInitialSampleOrders();
         return {
           ...createDefaultStore(),
           ...parsed,
+          orders: loadedOrders,
           design: {
             ...structuredClone(defaultDesign),
             ...(parsed.design || {}),
@@ -380,7 +387,7 @@ class CmsStore {
   addOrder(data: Omit<OrderRecord, "id" | "orderNumber" | "status" | "adminMemo" | "createdAt">): OrderRecord {
     const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     const seq = String(this.state.orders.length + 1).padStart(3, "0");
-    const record: OrderRecord = {
+    const rawRecord: OrderRecord = {
       ...data,
       id: crypto.randomUUID(),
       orderNumber: `ORD-${datePart}-${seq}`,
@@ -388,6 +395,7 @@ class CmsStore {
       adminMemo: "",
       createdAt: new Date().toISOString(),
     };
+    const record = normalizeOrderRecord(rawRecord);
     this.state.orders.unshift(record);
     this.persist();
     return record;
@@ -404,6 +412,38 @@ class CmsStore {
   getOrderById(id: string): OrderRecord | undefined {
     const target = this.state.orders.find((o) => o.id === id);
     return target ? structuredClone(target) : undefined;
+  }
+
+  updateOrderShipping(
+    id: string,
+    patch: {
+      shippingStatus?: ShippingStatus;
+      shippingCarrier?: string;
+      trackingNumber?: string;
+      shippedAt?: string;
+      adminMemo?: string;
+      status?: SubmissionStatus;
+    },
+  ): OrderRecord | undefined {
+    const target = this.state.orders.find((o) => o.id === id);
+    if (!target) return undefined;
+    if (patch.shippingStatus) {
+      target.shippingStatus = patch.shippingStatus;
+      if (patch.shippingStatus === "shipped" || patch.shippingStatus === "delivered") {
+        target.status = "completed";
+        if (!target.shippedAt) target.shippedAt = new Date().toISOString();
+      } else if (patch.shippingStatus === "packed") {
+        target.status = "in_progress";
+      }
+    }
+    if (patch.shippingCarrier !== undefined) target.shippingCarrier = patch.shippingCarrier;
+    if (patch.trackingNumber !== undefined) target.trackingNumber = patch.trackingNumber;
+    if (patch.shippedAt !== undefined) target.shippedAt = patch.shippedAt;
+    if (patch.adminMemo !== undefined) target.adminMemo = patch.adminMemo;
+    if (patch.status) target.status = patch.status;
+    target.updatedAt = new Date().toISOString();
+    this.persist();
+    return structuredClone(target);
   }
 
   updateSubmission(

@@ -153,6 +153,8 @@ export interface OrderLineItem {
   color?: string;
   unit?: string;
   quantity: string;
+  unitPrice?: number;
+  amount?: number;
   note: string;
 }
 
@@ -161,6 +163,8 @@ export interface OrderAttachment {
   url: string;
   size: number;
 }
+
+export type ShippingStatus = "pending" | "packed" | "shipped" | "delivered";
 
 export interface OrderRecord {
   id: string;
@@ -177,7 +181,79 @@ export interface OrderRecord {
   memo: string;
   status: SubmissionStatus;
   adminMemo: string;
+  shippingMethod?: "화물" | "택배" | "방문수령" | "용차";
+  shippingCarrier?: string;
+  trackingNumber?: string;
+  shippingStatus?: ShippingStatus;
+  shippedAt?: string;
+  totalAmount?: number;
   createdAt: string;
+  updatedAt?: string;
+}
+
+export interface DailyDispatchSummary {
+  date: string;
+  totalOrders: number;
+  pendingOrders: number;
+  packedOrders: number;
+  shippedOrders: number;
+  deliveredOrders: number;
+  byMethod: {
+    freight: number;
+    courier: number;
+    direct: number;
+    pickup: number;
+  };
+  pickingList: Array<{
+    productName: string;
+    spec: string;
+    totalQuantity: number;
+    unit: string;
+  }>;
+  orders: OrderRecord[];
+}
+
+export interface AccountRevenueRecord {
+  companyName: string;
+  bizNumber?: string;
+  contactName: string;
+  phone: string;
+  deliveryAddress: string;
+  shippingMethod: string;
+  totalOrders: number;
+  totalRevenue: number;
+  averageOrderValue: number;
+  lastOrderDate: string;
+  pendingCount: number;
+  topProducts: string[];
+  orders: OrderRecord[];
+}
+
+export interface RevenueKpiSummary {
+  period: "daily" | "weekly" | "monthly" | "yearly" | "all";
+  totalRevenue: number;
+  totalOrders: number;
+  averageOrderValue: number;
+  shippedRate: number;
+  revenueGrowthRate: number;
+  orderGrowthRate: number;
+  trend: Array<{
+    periodKey: string;
+    label: string;
+    revenue: number;
+    orderCount: number;
+  }>;
+  topAccounts: Array<{
+    name: string;
+    revenue: number;
+    orderCount: number;
+    percentage: number;
+  }>;
+  categoryBreakdown: Array<{
+    category: string;
+    revenue: number;
+    percentage: number;
+  }>;
 }
 
 export interface MediaItem {
