@@ -75,6 +75,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [location]);
 
+  useEffect(() => {
+    const handleOpenLogin = () => setBuyerAuthModalOpen(true);
+    window.addEventListener("open-buyer-auth-modal", handleOpenLogin);
+    return () => window.removeEventListener("open-buyer-auth-modal", handleOpenLogin);
+  }, []);
+
   const navNewProductSubItems: NavSubItem[] = cms.newProducts
     .filter((item) => item.visible && item.showInNav)
     .map((item) => ({

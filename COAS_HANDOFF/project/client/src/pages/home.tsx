@@ -2,16 +2,18 @@ import { useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Shield, Award, Truck, FileText } from "lucide-react";
+import { ArrowRight, Shield, Award, Truck, FileText, Building2 } from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { SearchModal } from "@/components/search-modal";
 import { resolveAssetUrl, useCmsBootstrap } from "@/lib/cms";
+import { useBuyerAuth, openBuyerAuthModal } from "@/lib/order-auth";
 
 const BASE_URL = "https://e-coas.replit.app";
 
 export default function Home() {
   const [searchOpen, setSearchOpen] = useState(false);
+  const { session: buyerSession, isAuthenticated: isBuyerLoggedIn } = useBuyerAuth();
   const { cms } = useCmsBootstrap();
   const { design } = cms;
   const { hero, company } = design;
@@ -86,14 +88,22 @@ export default function Home() {
               {hero.subtitle}
             </p>
             <div className="flex flex-wrap gap-4 pt-4 items-center">
-              <Link href={hero.primaryBtnHref || "/parts-index"}>
-                <Button
-                  size="lg"
-                  className="bg-white text-black hover:bg-white/90 border-none text-base h-12 px-8 cursor-pointer"
-                >
-                  {hero.primaryBtnText || "Explore Collections"}
-                </Button>
-              </Link>
+              {/* B2B Partner Login Button on Hero (User Request) */}
+              <Button
+                type="button"
+                size="lg"
+                onClick={openBuyerAuthModal}
+                className="bg-white text-black hover:bg-white/90 border-none text-base h-12 px-8 cursor-pointer flex items-center gap-2.5 font-bold shadow-xl transition-all active:scale-[0.98]"
+                data-testid="button-hero-buyer-login"
+                title="거래처 1초 간편로그인 (비밀번호 없음)"
+              >
+                <Building2 className="w-5 h-5 text-[#FF7B00]" />
+                <span>
+                  {isBuyerLoggedIn
+                    ? `${buyerSession.companyName} (로그인됨)`
+                    : "거래처 로그인"}
+                </span>
+              </Button>
               <Link href={hero.orderBtnHref || "/order"}>
                 <Button
                   size="lg"

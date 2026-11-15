@@ -105,6 +105,12 @@ export function logoutBuyerSession(): BuyerSession {
   return empty;
 }
 
+export function openBuyerAuthModal(): void {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("open-buyer-auth-modal"));
+  }
+}
+
 export function useBuyerAuth() {
   const [session, setSessionState] = useState<BuyerSession>(() => getBuyerSession());
 
@@ -129,5 +135,6 @@ export function useBuyerAuth() {
     phone: session.phone,
     login: (newSession: BuyerSession) => setBuyerSession(newSession),
     logout: () => logoutBuyerSession(),
+    openLoginModal: () => openBuyerAuthModal(),
   };
 }
