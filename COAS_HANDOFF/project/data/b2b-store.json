@@ -1,0 +1,143 @@
+{
+  "companies": [
+    {
+      "id": "comp_coas",
+      "companyName": "(주)코아스인테리어",
+      "bizNumber": "123-45-67890",
+      "deliveryAddress": "경기도 화성시 동탄첨단산업1로 27, A동 302호",
+      "shippingMethod": "화물",
+      "memo": "주요 거래처 / 수도권 현장 직송 자주 발주",
+      "staffContacts": [
+        {
+          "id": "staff_coas_1",
+          "name": "김담당 실장",
+          "phone": "010-1234-5678",
+          "role": "구매발주 총괄",
+          "isPrimary": true,
+          "createdAt": "2026-11-01T09:00:00.000Z"
+        },
+        {
+          "id": "staff_coas_2",
+          "name": "박과장",
+          "phone": "010-2222-3333",
+          "role": "시공 1팀장",
+          "isPrimary": false,
+          "createdAt": "2026-11-05T14:20:00.000Z"
+        },
+        {
+          "id": "staff_coas_3",
+          "name": "이소장",
+          "phone": "010-4444-5555",
+          "role": "동탄 현장소장",
+          "isPrimary": false,
+          "createdAt": "2026-11-10T11:15:00.000Z"
+        }
+      ],
+      "useCount": 14,
+      "updatedAt": "2026-11-15T10:00:00.000Z"
+    },
+    {
+      "id": "comp_hanssem",
+      "companyName": "한샘인테리어 디자인",
+      "bizNumber": "214-88-12345",
+      "deliveryAddress": "서울시 강남구 테헤란로 152 한샘빌딩 5층 자재부",
+      "shippingMethod": "화물",
+      "memo": "강남/서초 쇼룸 및 인테리어 시공 전문",
+      "staffContacts": [
+        {
+          "id": "staff_hanssem_1",
+          "name": "박과장",
+          "phone": "010-9876-5432",
+          "role": "자재구매팀",
+          "isPrimary": true,
+          "createdAt": "2026-11-02T10:30:00.000Z"
+        },
+        {
+          "id": "staff_hanssem_2",
+          "name": "정주임",
+          "phone": "010-3333-8888",
+          "role": "현장발주 담당",
+          "isPrimary": false,
+          "createdAt": "2026-11-08T16:45:00.000Z"
+        }
+      ],
+      "useCount": 8,
+      "updatedAt": "2026-11-15T09:30:00.000Z"
+    },
+    {
+      "id": "comp_younglim",
+      "companyName": "영림도어 하드웨어",
+      "bizNumber": "110-81-99887",
+      "deliveryAddress": "인천광역시 서구 원창동 382-1 물류센터",
+      "shippingMethod": "택배",
+      "memo": "도어 제작 공방 및 철물 부속 납품",
+      "staffContacts": [
+        {
+          "id": "staff_younglim_1",
+          "name": "이소장",
+          "phone": "010-5555-7777",
+          "role": "영업/자재부",
+          "isPrimary": true,
+          "createdAt": "2026-11-03T08:15:00.000Z"
+        },
+        {
+          "id": "staff_younglim_2",
+          "name": "최대리",
+          "phone": "010-7777-9999",
+          "role": "출하검수",
+          "isPrimary": false,
+          "createdAt": "2026-11-12T13:00:00.000Z"
+        }
+      ],
+      "useCount": 5,
+      "updatedAt": "2026-11-14T17:00:00.000Z"
+    }
+  ],
+  "authLogs": [
+    {
+      "id": "auth_log_1",
+      "companyName": "(주)코아스인테리어",
+      "contactName": "김담당 실장",
+      "phone": "010-1234-5678",
+      "loginMethod": "social_kakao",
+      "status": "success",
+      "loggedAt": "2026-11-15T17:35:10.000Z"
+    },
+    {
+      "id": "auth_log_2",
+      "companyName": "(주)코아스인테리어",
+      "contactName": "이소장",
+      "phone": "010-4444-5555",
+      "loginMethod": "biz_phone",
+      "status": "success",
+      "loggedAt": "2026-11-15T16:42:25.000Z"
+    },
+    {
+      "id": "auth_log_3",
+      "companyName": "한샘인테리어 디자인",
+      "contactName": "박과장",
+      "phone": "010-9876-5432",
+      "loginMethod": "biz_phone",
+      "status": "success",
+      "loggedAt": "2026-11-15T15:10:00.000Z"
+    },
+    {
+      "id": "auth_log_4",
+      "companyName": "영림도어 하드웨어",
+      "contactName": "이소장",
+      "phone": "010-5555-7777",
+      "loginMethod": "biz_phone",
+      "status": "success",
+      "loggedAt": "2026-11-15T11:20:45.000Z"
+    },
+    {
+      "id": "auth_log_5",
+      "companyName": "(주)코아스인테리어",
+      "contactName": "박과장",
+      "phone": "010-2222-3333",
+      "loginMethod": "biz_phone",
+      "status": "success",
+      "loggedAt": "2026-11-14T18:05:12.000Z"
+    }
+  ]
+}

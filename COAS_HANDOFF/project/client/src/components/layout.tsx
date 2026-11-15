@@ -8,6 +8,9 @@ import {
   Instagram,
   Linkedin,
   ChevronDown,
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Search,
   BookOpen,
   Lock,
@@ -15,7 +18,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Minus,
-  ChevronUp,
   X,
   Building2,
   LogIn,
@@ -55,7 +57,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [ecatalogOpen, setEcatalogOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [isOrderBarMinimized, setIsOrderBarMinimized] = useState(false);
+  const [isSwingDrawerOpen, setIsSwingDrawerOpen] = useState(false);
   const [buyerAuthModalOpen, setBuyerAuthModalOpen] = useState(false);
   const { session: buyerSession, isAuthenticated: isBuyerLoggedIn, logout: buyerLogout } = useBuyerAuth();
   const { cms } = useCmsBootstrap();
@@ -372,14 +374,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
         onClose={() => setBuyerAuthModalOpen(false)}
       />
 
-      {/* Right Floating Return-to-Order Smart Dock (Active when browsing Parts Index / New Products / Product Detail / Home during an Order) */}
+      {/* Right Edge Vertical Swing Tab & Slide Drawer (Active when browsing Parts Index / New Products / Product Detail / Home during an Order) */}
       {showOrderReturnBar && (
-        <>
-          {!isOrderBarMinimized ? (
-            <div
-              data-testid="floating-order-return-bar"
-              className="fixed bottom-6 right-6 z-50 w-[350px] max-w-[calc(100vw-32px)] bg-slate-900/95 backdrop-blur-md text-white border-2 border-[#FF7B00] rounded-2xl shadow-2xl p-4 flex flex-col gap-3 transition-all duration-300 animate-in fade-in slide-in-from-bottom-3"
-            >
+        <aside
+          data-testid="floating-order-swing-tab"
+          aria-label="작성 중 발주서 스윙 탭"
+          className="fixed right-0 top-1/2 -translate-y-1/2 z-50 flex items-center print:hidden select-none"
+        >
+          {/* Slide-out Drawer Panel (left of the handle) */}
+          <div
+            className={`transition-all duration-300 ease-out transform ${
+              isSwingDrawerOpen
+                ? "translate-x-0 opacity-100 pointer-events-auto"
+                : "translate-x-full opacity-0 pointer-events-none w-0 overflow-hidden"
+            }`}
+          >
+            <div className="w-80 bg-slate-900/98 backdrop-blur-md text-white border-2 border-r-0 border-[#FF7B00] rounded-l-2xl shadow-2xl p-4 flex flex-col gap-3">
               {/* Header */}
               <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
                 <div className="flex items-center gap-2 min-w-0">
@@ -391,11 +401,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <div className="flex items-center gap-1 shrink-0">
                   <button
                     type="button"
-                    onClick={() => setIsOrderBarMinimized(true)}
-                    title="미니 캡슐로 접기"
+                    onClick={() => setIsSwingDrawerOpen(false)}
+                    title="스윙 탭 접기"
                     className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
                   >
-                    <Minus className="w-3.5 h-3.5" />
+                    <ChevronRight className="w-4 h-4 text-orange-400" />
                   </button>
                   {itemCount === 0 && (
                     <button
@@ -464,35 +474,29 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 )}
               </div>
             </div>
-          ) : (
-            <div
-              data-testid="floating-order-return-pill"
-              className="fixed bottom-6 right-6 z-50 flex items-center gap-1 bg-slate-900/95 backdrop-blur-md text-white border-2 border-[#FF7B00] rounded-full shadow-2xl p-1.5 pr-2.5 transition-all duration-300 animate-in fade-in"
-            >
-              <Link href="/order">
-                <button
-                  type="button"
-                  className="flex items-center gap-2 px-2.5 py-1 text-xs font-bold text-white hover:text-[#FF7B00] transition-colors cursor-pointer"
-                >
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#FF7B00] animate-pulse shrink-0" />
-                  <span>발주서 작성 중</span>
-                  <span className="px-1.5 py-0.5 rounded-full bg-[#FF7B00] text-white text-[11px] font-extrabold">
-                    {itemCount}종({totalQty})
-                  </span>
-                  <ArrowRight className="w-3.5 h-3.5 text-[#FF7B00]" />
-                </button>
-              </Link>
-              <button
-                type="button"
-                onClick={() => setIsOrderBarMinimized(false)}
-                title="상세 카드 펼치기"
-                className="p-1 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-              >
-                <ChevronUp className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-        </>
+          </div>
+
+          {/* Right Edge Swing Tab Handle */}
+          <button
+            type="button"
+            onClick={() => setIsSwingDrawerOpen((prev) => !prev)}
+            data-testid="button-order-swing-tab"
+            title={isSwingDrawerOpen ? "발주서 정보 접기" : "작성 중인 발주서 정보 열기"}
+            className="bg-[#FF7B00] hover:bg-[#e66f00] active:scale-95 text-white rounded-l-xl px-2 py-4 shadow-2xl border border-r-0 border-orange-400 flex flex-col items-center gap-2 cursor-pointer transition-all shrink-0 group"
+          >
+            {isSwingDrawerOpen ? (
+              <ChevronRight className="w-4 h-4 text-white group-hover:translate-x-0.5 transition-transform" />
+            ) : (
+              <ChevronLeft className="w-4 h-4 text-white group-hover:-translate-x-0.5 transition-transform animate-pulse" />
+            )}
+            <span className="text-[11px] font-black leading-tight [writing-mode:vertical-rl] tracking-wider py-1">
+              작성 중 발주서
+            </span>
+            <span className="px-1.5 py-0.5 rounded-full bg-slate-950 text-orange-300 text-[10.5px] font-black border border-orange-400/60 min-w-[22px] text-center shadow-xs">
+              {itemCount}
+            </span>
+          </button>
+        </aside>
       )}
 
       {/* Footer */}
