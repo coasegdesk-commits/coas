@@ -23,6 +23,25 @@ export interface OrderDraftState {
   initialV20?: boolean;
 }
 
+export function sanitizeSpecification(
+  rawSpec: string | null | undefined,
+): string {
+  if (!rawSpec) return "";
+  let s = rawSpec.trim();
+  // "주문제작 가능", "주문 규격", "표준 규격" 등 안내/표시 사항 제거 -> 제품 사양 실제 규격만 유지
+  s = s
+    .replace(/,\s*주문제작\s*가능/gi, "")
+    .replace(/주문제작\s*가능/gi, "")
+    .replace(/주문\s*제작\s*가능/gi, "")
+    .replace(/,\s*주문제작/gi, "")
+    .replace(/주문제작/gi, "")
+    .replace(/^주문\s*규격$/gi, "")
+    .replace(/^표준\s*규격$/gi, "")
+    .trim();
+  s = s.replace(/^[,/\s\-|]+|[,/\s\-|]+$/g, "").trim();
+  return s;
+}
+
 export function createEmptyOrderRow(
   overrides?: Partial<OrderLineItem>,
 ): OrderLineItem {
@@ -91,6 +110,7 @@ export function loadOrderDraft(): OrderDraftState {
             ) {
               normalized.unit = "EA";
             }
+            normalized.spec = sanitizeSpecification(normalized.spec);
             return normalized;
           })
         : createInitialOrderRows(INITIAL_ORDER_ROW_COUNT);
@@ -187,8 +207,8 @@ export function inferDefaultUnitAndSpec(
     hay.includes("SD-02");
   const unit: "SET" | "EA" = isRailOrGuide ? "EA" : "SET";
   const color = unit === "EA" ? "실버/기본" : "기본";
-  const spec =
-    specHint.trim() || (unit === "EA" ? "표준 규격" : "기본 세트 구성");
+  const clean = sanitizeSpecification(specHint);
+  const spec = clean || (unit === "SET" ? "기본 세트 구성" : "");
   return { unit, color, spec };
 }
 
@@ -214,7 +234,8 @@ export function addItemToOrderDraft(input: {
   const inferred = inferDefaultUnitAndSpec(code, title, input.spec || "");
   const unit = input.unit || inferred.unit;
   const color = input.color || inferred.color;
-  const spec = input.spec?.trim() || inferred.spec;
+  const cleanInputSpec = sanitizeSpecification(input.spec);
+  const spec = cleanInputSpec || inferred.spec;
 
   const nextItems = [...draft.items];
 

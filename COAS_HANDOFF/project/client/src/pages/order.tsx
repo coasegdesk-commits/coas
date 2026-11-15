@@ -74,6 +74,7 @@ import {
   mergeAndSaveBuyerProfiles,
   parseSmartBuyerPaste,
   formatKoreanPhoneNumber,
+  sanitizeSpecification,
   type SavedBuyerProfile,
 } from "@/lib/order-draft";
 import { LayoutPresetManager } from "@/components/order/LayoutPresetManager";
@@ -1446,9 +1447,8 @@ export default function OrderPage() {
               ? matchedProd.nameKo
               : card.subtitle || sec.title,
           specHint:
-            card.subtitle ||
-            matchedProd?.specifications ||
-            (unit === "EA" ? "표준 규격" : "기본 세트 구성"),
+            sanitizeSpecification(matchedProd?.specifications || card.subtitle) ||
+            (unit === "SET" ? "기본 세트 구성" : ""),
           page:
             card.page ||
             (matchedProd?.pageNumber ? `${matchedProd.pageNumber}p` : ""),
@@ -1469,8 +1469,8 @@ export default function OrderPage() {
         code: p.name,
         title: p.nameKo,
         specHint:
-          p.specifications ||
-          (unit === "EA" ? "표준 규격" : "기본 세트 구성"),
+          sanitizeSpecification(p.specifications) ||
+          (unit === "SET" ? "기본 세트 구성" : ""),
         page: p.pageNumber ? `${p.pageNumber}p` : "",
         categoryGroup: group,
         rawCategoryKo: p.categoryKo,
@@ -2017,7 +2017,7 @@ export default function OrderPage() {
       const newRow = createEmptyOrderRow({
         productId: cat.id,
         productName: displayFull,
-        spec: cat.specHint,
+        spec: sanitizeSpecification(cat.specHint),
         color: cat.defaultUnit === "EA" ? "실버/기본" : "기본",
         unit: cat.defaultUnit,
         quantity: "1",
@@ -2048,7 +2048,7 @@ export default function OrderPage() {
               ...row,
               productId: cat.id,
               productName: displayFull,
-              spec: row.spec.trim() || cat.specHint,
+              spec: sanitizeSpecification(row.spec.trim() || cat.specHint),
               color:
                 (row.color || "").trim() ||
                 (cat.defaultUnit === "EA" ? "실버/기본" : "기본"),
@@ -2480,7 +2480,7 @@ export default function OrderPage() {
     );
     rowsCsv.push("");
     rowsCsv.push(
-      ["No", "모델코드", "품명", "규격/레일길이(mm)/방향", "색상/재질", "단위", "수량", "비고"]
+      ["No", "모델코드", "품명", "규격/레일길이(mm)", "색상/재질", "단위", "수량", "비고"]
         .map(esc)
         .join(","),
     );
@@ -5715,7 +5715,7 @@ export default function OrderPage() {
                                         extraClass: "",
                                       },
                                       {
-                                        label: "규격·레일길이(mm)·방향",
+                                        label: "규격·레일길이(mm)",
                                         extraClass: "",
                                       },
                                       { label: "색상/재질", extraClass: "" },
@@ -5887,7 +5887,7 @@ export default function OrderPage() {
                                             placeholder={
                                               idx === 0
                                                 ? orientation === "landscape"
-                                                  ? "예: 3,000mm / 양방향"
+                                                  ? "예: 3,000mm"
                                                   : "예: 3,000mm"
                                                 : ""
                                             }
