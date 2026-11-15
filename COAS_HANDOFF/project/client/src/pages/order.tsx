@@ -6419,30 +6419,30 @@ export default function OrderPage() {
                                 style={{
                                   width: `${colWidths.reduce((a, b) => a + b, 0) + 1}px`,
                                 }}
-                                className={`no-print group relative h-[14px] my-0 flex items-center justify-center cursor-ns-resize select-none z-20 transition-colors ${
+                                className={`no-print group relative h-[8px] my-0 flex items-center justify-center cursor-ns-resize select-none z-20 transition-colors ${
                                   isResizingMemo
                                     ? "bg-[#FF7B00] cursor-ns-resize"
                                     : "bg-transparent hover:bg-[#FF7B00]"
                                 }`}
                               >
-                                {/* 6-Dot Grip Icon: Distinctly spaced round dots, default subtle grey, turns solid BLACK on hover */}
+                                {/* 6-Dot Grip Icon: Distinctly spaced round dots, tight gap to top/bottom lines without touching */}
                                 <div
                                   className={`relative z-10 flex items-center justify-center transition-colors pointer-events-none ${
                                     isResizingMemo
-                                      ? "text-white scale-110"
-                                      : "text-slate-400 group-hover:text-black group-hover:scale-110"
+                                      ? "text-white"
+                                      : "text-slate-400 group-hover:text-black"
                                   }`}
                                 >
                                   <svg
-                                    className="w-5 h-2.5 fill-current"
-                                    viewBox="0 0 24 10"
+                                    className="w-5 h-[8px] fill-current"
+                                    viewBox="0 0 24 8"
                                   >
-                                    <circle cx="4" cy="2.5" r="1.4" />
-                                    <circle cx="12" cy="2.5" r="1.4" />
-                                    <circle cx="20" cy="2.5" r="1.4" />
-                                    <circle cx="4" cy="7.5" r="1.4" />
-                                    <circle cx="12" cy="7.5" r="1.4" />
-                                    <circle cx="20" cy="7.5" r="1.4" />
+                                    <circle cx="5" cy="2.1" r="1" />
+                                    <circle cx="12" cy="2.1" r="1" />
+                                    <circle cx="19" cy="2.1" r="1" />
+                                    <circle cx="5" cy="5.9" r="1" />
+                                    <circle cx="12" cy="5.9" r="1" />
+                                    <circle cx="19" cy="5.9" r="1" />
                                   </svg>
                                 </div>
 
