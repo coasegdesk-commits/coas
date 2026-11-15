@@ -630,40 +630,22 @@ export default function AdminPage() {
                 );
               })}
 
-              {/* Full-Height 6-Dot Point Slide Tab Rail (상단부터 하단까지 색칠된 6점 포인트 접기/닫기 슬라이드탭) */}
+              {/* Single Center Slide Tab Handle as in attached image (상하 중간에 1개만 배치된 < 6점 > 슬라이드탭) */}
               <button
                 type="button"
                 onClick={toggleSidebar}
-                data-testid="button-sidebar-fullheight-6dot-rail"
+                data-testid="button-sidebar-center-grip-tab"
                 title="사이드바 메뉴 접기 / 닫기 (클릭)"
-                className="hidden lg:flex absolute -right-3 top-0 bottom-0 w-6 z-30 flex-col items-center justify-between py-4 bg-white/95 hover:bg-orange-50/90 text-gray-400 hover:text-[#FF7B00] border border-gray-300 hover:border-[#FF7B00] rounded-r-lg shadow-md cursor-pointer transition-all group backdrop-blur-xs select-none"
+                className="hidden lg:flex absolute -right-2.5 top-1/2 -translate-y-1/2 z-30 w-5 h-20 bg-white hover:bg-orange-50/80 text-slate-500 hover:text-[#FF7B00] border border-gray-300 hover:border-[#FF7B00] rounded-md shadow-md flex-col items-center justify-between py-1.5 cursor-pointer transition-all group select-none"
               >
-                {/* 상단 6점 도트 및 접기 화살표 */}
-                <div className="flex flex-col items-center gap-1.5 pt-1">
-                  <ChevronLeft className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#FF7B00] group-hover:-translate-x-0.5 transition-all" />
-                  <SixDotPoint filled={true} />
-                </div>
+                {/* 상단 < 화살표 */}
+                <ChevronLeft className="w-3.5 h-3.5 text-slate-500 group-hover:text-[#FF7B00] group-hover:-translate-x-0.5 transition-transform" />
 
-                {/* 상-중 6점 도트 */}
-                <SixDotPoint filled={true} />
+                {/* 중간 6점 도트 포인트 (첨부 이미지 형태 그대로 2열 3행) */}
+                <GripVertical className="w-3.5 h-3.5 text-slate-600 group-hover:text-[#FF7B00] transition-colors" />
 
-                {/* 중앙 6점 도트 및 [접기 · 닫기] 인디케이터 배지 */}
-                <div className="flex flex-col items-center gap-1.5 py-2 px-0.5 bg-orange-50 border border-orange-200 rounded-md shadow-2xs group-hover:bg-[#FF7B00] group-hover:border-orange-500 transition-colors">
-                  <SixDotPoint filled={true} className="group-hover:[&>span]:bg-white" />
-                  <span className="text-[9px] font-black [writing-mode:vertical-rl] tracking-tighter text-[#FF7B00] group-hover:text-white transition-colors py-0.5">
-                    접기·닫기
-                  </span>
-                  <SixDotPoint filled={true} className="group-hover:[&>span]:bg-white" />
-                </div>
-
-                {/* 중-하 6점 도트 */}
-                <SixDotPoint filled={true} />
-
-                {/* 하단 6점 도트 및 접기 화살표 */}
-                <div className="flex flex-col items-center gap-1.5 pb-1">
-                  <SixDotPoint filled={true} />
-                  <ChevronLeft className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#FF7B00] group-hover:-translate-x-0.5 transition-all" />
-                </div>
+                {/* 하단 > 화살표 */}
+                <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-[#FF7B00] group-hover:translate-x-0.5 transition-transform" />
               </button>
             </nav>
 
@@ -675,42 +657,24 @@ export default function AdminPage() {
             )}
           </aside>
         ) : (
-          /* Collapsed State: Left Edge Full-Height 6-Dot Point Slide Tab & Swing Tab Handle */
-          <aside className="shrink-0 sticky top-20 z-20 self-start flex items-start gap-2">
-            {/* Full-Height 6-Dot Point Slide Tab Rail (펼치기 / 열기) */}
+          /* Collapsed State: Left Edge Single Center Slide Tab & Orange Swing Tab */
+          <aside className="shrink-0 sticky top-1/2 -translate-y-1/2 z-20 self-start flex items-center gap-2">
+            {/* Single Center Slide Tab Handle (펼치기 / 열기) */}
             <button
               type="button"
               onClick={toggleSidebar}
-              data-testid="button-sidebar-fullheight-6dot-expand-rail"
+              data-testid="button-sidebar-center-grip-expand"
               title="사이드바 메뉴 펼치기 / 열기 (클릭)"
-              className="w-6 py-4 min-h-[460px] bg-white hover:bg-orange-50 text-gray-400 hover:text-[#FF7B00] border border-l-0 border-gray-300 hover:border-[#FF7B00] rounded-r-lg shadow-lg flex flex-col items-center justify-between cursor-pointer transition-all group select-none"
+              className="w-5 h-20 bg-white hover:bg-orange-50/80 text-slate-500 hover:text-[#FF7B00] border border-l-0 border-gray-300 hover:border-[#FF7B00] rounded-r-md shadow-md flex flex-col items-center justify-between py-1.5 cursor-pointer transition-all group select-none"
             >
-              {/* 상단 6점 도트 */}
-              <div className="flex flex-col items-center gap-1.5 pt-1">
-                <ChevronRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#FF7B00] group-hover:translate-x-0.5 transition-all" />
-                <SixDotPoint filled={true} />
-              </div>
+              {/* 상단 < 화살표 */}
+              <ChevronLeft className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#FF7B00] transition-colors" />
 
-              {/* 상-중 6점 도트 */}
-              <SixDotPoint filled={true} />
+              {/* 중간 6점 도트 포인트 */}
+              <GripVertical className="w-3.5 h-3.5 text-slate-600 group-hover:text-[#FF7B00] transition-colors" />
 
-              {/* 중앙 6점 도트 및 [펼치기 · 열기] 인디케이터 배지 */}
-              <div className="flex flex-col items-center gap-1.5 py-2 px-0.5 bg-orange-50 border border-orange-200 rounded-md shadow-2xs group-hover:bg-[#FF7B00] group-hover:border-orange-500 transition-colors">
-                <SixDotPoint filled={true} className="group-hover:[&>span]:bg-white" />
-                <span className="text-[9px] font-black [writing-mode:vertical-rl] tracking-tighter text-[#FF7B00] group-hover:text-white transition-colors py-0.5">
-                  펼치기·열기
-                </span>
-                <SixDotPoint filled={true} className="group-hover:[&>span]:bg-white" />
-              </div>
-
-              {/* 중-하 6점 도트 */}
-              <SixDotPoint filled={true} />
-
-              {/* 하단 6점 도트 */}
-              <div className="flex flex-col items-center gap-1.5 pb-1">
-                <SixDotPoint filled={true} />
-                <ChevronRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#FF7B00] group-hover:translate-x-0.5 transition-all" />
-              </div>
+              {/* 하단 > 화살표 */}
+              <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-[#FF7B00] group-hover:translate-x-0.5 transition-transform" />
             </button>
 
             {/* Standard Orange Vertical Swing Tab Handle */}
@@ -721,7 +685,7 @@ export default function AdminPage() {
               title="관리자 메뉴 펼치기"
               className="bg-[#FF7B00] hover:bg-[#e66f00] active:scale-95 text-white rounded-r-xl px-2 py-3.5 shadow-2xl border border-l-0 border-orange-400 flex flex-col items-center gap-1.5 cursor-pointer transition-all shrink-0 group select-none"
             >
-              <SixDotPoint filled={true} className="[&>span]:bg-white" />
+              <GripVertical className="w-3.5 h-3.5 text-orange-200 group-hover:scale-110 transition-transform" />
               <ChevronRight className="w-4 h-4 text-white group-hover:translate-x-0.5 transition-transform animate-pulse" />
               <span className="text-[11px] font-black leading-tight [writing-mode:vertical-rl] tracking-wider py-1">
                 관리자 메뉴
