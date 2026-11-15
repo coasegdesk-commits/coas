@@ -2259,21 +2259,72 @@ export default function OrderPage() {
     });
   };
 
-  // Count how many filled rows currently wrap to 2+ lines inside current column widths
-  const multiLineCount = useMemo(() => {
-    const willWrap = (val: string, colW: number, fontPx: number) => {
-      const clean = val.trim();
-      if (!clean) return false;
-      if (clean.includes("\n")) return true;
-      let w = 0;
-      for (const ch of clean) {
-        w += /[\u3131-\uD79D]/.test(ch) ? 1.65 : 0.95;
+  // Shared cell visual-line & inner-height estimator matching getDynamicCellTypography + AutoWrapCell 1-to-1
+  const estimateCellMetrics = (
+    text: string,
+    colWidthPx: number,
+    baseFontPx: number,
+    baseInnerPx: number,
+  ): { visualLines: number; requiredInnerPx: number } => {
+    const clean = (text || "").trim();
+    if (!clean) {
+      return { visualLines: 1, requiredInnerPx: baseInnerPx };
+    }
+    const usablePx = Math.max(40, colWidthPx - 14);
+    let totalCharW = 0;
+    for (const ch of clean) {
+      if (ch !== "\n") {
+        totalCharW += /[\u3131-\uD79D]/.test(ch) ? 1.65 : 0.95;
       }
-      const usablePx = Math.max(40, colW - 14);
-      return w * (fontPx * 0.56) > usablePx;
+    }
+    const baseRatio = (totalCharW * (baseFontPx * 0.56)) / usablePx;
+    const effectiveFontPx =
+      baseRatio <= 1.0
+        ? baseFontPx
+        : baseRatio <= 1.65
+          ? baseFontPx * 0.8
+          : baseFontPx * 0.72;
+    const lineH =
+      baseRatio <= 1.0 ? 1.32 : baseRatio <= 1.65 ? 1.25 : 1.2;
+
+    const segments = clean.split("\n");
+    let visualLines = 0;
+    for (const seg of segments) {
+      if (!seg) {
+        visualLines += 1;
+        continue;
+      }
+      let segW = 0;
+      for (const ch of seg) {
+        segW += /[\u3131-\uD79D]/.test(ch) ? 1.65 : 0.95;
+      }
+      const segPx = segW * (effectiveFontPx * 0.56);
+      visualLines += Math.max(1, Math.ceil(segPx / usablePx));
+    }
+
+    const padY = baseInnerPx <= 25 ? 4 : 5;
+    const rawInnerPx = Math.ceil(visualLines * effectiveFontPx * lineH + padY);
+    const maxAllowed = Math.max(baseInnerPx * 1.75, 40);
+    return {
+      visualLines,
+      requiredInnerPx: Math.max(
+        baseInnerPx,
+        Math.min(rawInnerPx, maxAllowed),
+      ),
     };
+  };
+
+  // Count how many filled rows genuinely wrap to 2+ visual lines inside current column widths
+  const multiLineCount = useMemo(() => {
+    const refInner = Math.max(20, rowHeightPx - 1);
+    const cellFont = refInner <= 23 ? 10 : refInner <= 26 ? 10.5 : 11;
     return items.filter((r) => {
-      if (!r.productId && !r.productName.trim() && !r.spec.trim() && !r.note.trim()) {
+      if (
+        !r.productId &&
+        !r.productName.trim() &&
+        !r.spec.trim() &&
+        !r.note.trim()
+      ) {
         return false;
       }
       const resolved = resolveRowMasterDisplay(r);
@@ -2284,13 +2335,21 @@ export default function OrderPage() {
         .filter(Boolean)
         .join(" ");
       return (
-        willWrap(inlineLabel, Math.max(70, colWidths[1] - 18), 10) ||
-        willWrap(r.spec, colWidths[2], 11) ||
-        willWrap(r.color || "", colWidths[3], 11) ||
-        willWrap(r.note, colWidths[6], 11)
+        estimateCellMetrics(
+          inlineLabel,
+          Math.max(70, colWidths[1] - 18),
+          10,
+          refInner,
+        ).visualLines >= 2 ||
+        estimateCellMetrics(r.spec, colWidths[2], cellFont, refInner)
+          .visualLines >= 2 ||
+        estimateCellMetrics(r.color || "", colWidths[3], cellFont, refInner)
+          .visualLines >= 2 ||
+        estimateCellMetrics(r.note, colWidths[6], cellFont, refInner)
+          .visualLines >= 2
       );
     }).length;
-  }, [items, colWidths, catalogList]);
+  }, [items, colWidths, rowHeightPx, catalogList]);
 
   // Sequential numbering only for rows with filled code/product
   const filledItemNumbers = useMemo(() => {
@@ -2325,10 +2384,12 @@ export default function OrderPage() {
       // Dragging UP (deltaY < 0): expands memo upwards -> decreases row count
       // Dragging DOWN (deltaY > 0): shrinks memo downwards -> increases row count
       const rowDelta = Math.round(deltaY / 28);
-      const maxRows = orientation === "landscape" ? 20 : 25;
+      const singleMaxRows = orientation === "landscape" ? 20 : 25;
+      const maxRows =
+        resizeStartRowsRef.current > singleMaxRows ? 200 : singleMaxRows;
       const newCount = Math.max(
         MIN_ORDER_ROW_COUNT,
-        Math.min(maxRows, resizeStartRowsRef.current + rowDelta)
+        Math.min(maxRows, resizeStartRowsRef.current + rowDelta),
       );
       if (newCount !== items.length) {
         setTargetRowCount(newCount);
@@ -2346,98 +2407,122 @@ export default function OrderPage() {
     window.addEventListener("mouseup", onMouseUp);
   };
 
-  // Strict A4 Multi-Page Pagination Engine:
-  // • Portrait (794×1123): Page 1 fits up to 25 rows max, with ~13mm (50px) bottom margin.
-  // • Landscape (1123×794): Page 1 fits 15~20 rows cleanly, with ~13mm (50px) bottom margin.
-  // • Every row outer height includes the 1px collapsed border (cellInnerPx = outerRowPx - 1).
+  // Flexible & Pixel-Accurate A4 Multi-Page Pagination Engine:
+  // • Dynamically adapts row height & per-page item packing to any requested row count (10~200 rows).
+  // • Single-page mode (10~25 Portrait / 10~20 Landscape): keeps all rows + 합계 + 배송메모 on 1 A4 sheet.
+  // • Multi-page mode (26+ Portrait / 21+ Landscape): non-last pages have NO memo/summary, so actual
+  //   item rows (품목) pack all the way down to the exact ~13mm (50px) bottom margin with elastic stretch.
   const a4Pages = useMemo(() => {
-    const willWrap = (val: string, colW: number, fontPx: number) => {
-      const clean = val.trim();
-      if (!clean) return false;
-      if (clean.includes("\n")) return true;
-      let w = 0;
-      for (const ch of clean) {
-        w += /[\u3131-\uD79D]/.test(ch) ? 1.65 : 0.95;
-      }
-      const usablePx = Math.max(40, colW - 14);
-      return w * (fontPx * 0.56) > usablePx;
+    const innerSheetH = orientation === "landscape" ? 722 : 1016;
+    const firstPageTopChrome = orientation === "landscape" ? 215 : 252;
+    const nextPageTopChrome = orientation === "landscape" ? 41 : 44;
+    const lastPageMinBottomChrome = orientation === "landscape" ? 85 : 100;
+    const lastPageComfortBottomChrome = orientation === "landscape" ? 98 : 118;
+
+    const singlePageMaxRows = orientation === "landscape" ? 20 : 25;
+    const minOuterRowPx = orientation === "landscape" ? 21 : 26;
+
+    const singlePageBodyBudget =
+      innerSheetH - firstPageTopChrome - lastPageMinBottomChrome; // 664 portrait | 422 landscape
+    const firstPageBodyBudget = innerSheetH - firstPageTopChrome; // 764 portrait | 507 landscape
+    const midPageBodyBudget = innerSheetH - nextPageTopChrome; // 972 portrait | 681 landscape
+    const lastPageFitBudget =
+      innerSheetH - nextPageTopChrome - lastPageMinBottomChrome; // 872 portrait | 596 landscape
+    const lastPageFillerBudget =
+      innerSheetH - nextPageTopChrome - lastPageComfortBottomChrome; // 854 portrait | 583 landscape
+
+    const getRowRequiredOuterPx = (
+      row: (typeof items)[number],
+      baseOuterPx: number,
+    ): number => {
+      const baseInnerPx = Math.max(19, Math.floor(baseOuterPx - 1));
+      const cellFontPx =
+        baseInnerPx <= 23 ? 10 : baseInnerPx <= 26 ? 10.5 : 11;
+      const specH = estimateCellMetrics(
+        row.spec,
+        colWidths[2],
+        cellFontPx,
+        baseInnerPx,
+      ).requiredInnerPx;
+      const colorH = estimateCellMetrics(
+        row.color || "",
+        colWidths[3],
+        cellFontPx,
+        baseInnerPx,
+      ).requiredInnerPx;
+      const noteH = estimateCellMetrics(
+        row.note,
+        colWidths[6],
+        cellFontPx,
+        baseInnerPx,
+      ).requiredInnerPx;
+      const maxInner = Math.max(baseInnerPx, specH, colorH, noteH);
+      return Math.max(baseOuterPx, maxInner + 1);
     };
 
-    const rowEntries = items.map((row, globalIdx) => {
-      const resolved = resolveRowMasterDisplay(row);
-      const inlineLabel = [
-        resolved.code ? `[${resolved.code}]` : "",
-        resolved.title,
-      ]
-        .filter(Boolean)
-        .join(" ");
-      const wraps =
-        willWrap(inlineLabel, Math.max(70, colWidths[1] - 18), 10) ||
-        willWrap(row.spec, colWidths[2], 10.5) ||
-        willWrap(row.color || "", colWidths[3], 10.5) ||
-        willWrap(row.note, colWidths[6], 10.5);
-      return {
-        row,
-        globalIdx,
-        weight: wraps ? 1.6 : 1,
-      };
-    });
+    const allEntries = items.map((row, globalIdx) => ({ row, globalIdx }));
 
-    // Hard cap: Page 1 never exceeds 25 rows (Portrait: max 25, Landscape: max 20)
-    const maxFirstPageRows = orientation === "landscape" ? 20 : 25;
-    const minOuterRowPx = orientation === "landscape" ? 22 : 27;
-
-    // Exact tbody outer pixel budgets AFTER reserving top chrome (including 15mm top margin in portrait), footer chrome, and 50px (~13.2mm) bottom margin
-    const singlePageBodyBudget = orientation === "landscape" ? 445 : 720;
-    const firstPageBodyBudget = orientation === "landscape" ? 488 : 770;
-    const midPageBodyBudget = orientation === "landscape" ? 625 : 936;
-    const lastPageBodyBudget = orientation === "landscape" ? 568 : 856;
-
-    const totalWeight = rowEntries.reduce((acc, r) => acc + r.weight, 0);
-    const singleMinOuterPx =
-      rowHeightPx >= 38
-        ? Math.max(minOuterRowPx, rowHeightPx - 4)
-        : minOuterRowPx;
-
-    // 1-Page Exact Fit (10~25 rows in Portrait, 10~20 rows in Landscape)
-    // Whenever row count is within 1-page max (portrait 25, landscape 20), always keep strictly on 1 single page!
-    if (rowEntries.length <= maxFirstPageRows) {
-      const maxFitOuterPx = Math.floor(
-        singlePageBodyBudget / Math.max(1, totalWeight),
-      );
+    // 1. Single-Page Mode: whenever requested row count <= singlePageMaxRows and fits within A4 budget
+    if (allEntries.length <= singlePageMaxRows) {
       const preferredOuter =
         orientation === "portrait"
-          ? Math.max(rowHeightPx, 35)
-          : Math.max(rowHeightPx, 29);
-      const effectiveOuterRowPx = Math.max(
-        minOuterRowPx,
-        Math.min(maxFitOuterPx, preferredOuter),
+          ? Math.max(rowHeightPx, allEntries.length <= 15 ? 35 : 32)
+          : Math.max(rowHeightPx, 28);
+
+      const minRequiredSum = allEntries.reduce(
+        (sum, e) => sum + getRowRequiredOuterPx(e.row, minOuterRowPx),
+        0,
       );
-      return [
-        {
-          pageIndex: 0,
-          isFirst: true,
-          isLast: true,
-          rows: rowEntries,
-          effectiveOuterRowPx,
-          cellInnerPx: Math.max(20, effectiveOuterRowPx - 1),
-          fillerCount: 0,
-        },
-      ];
+
+      if (minRequiredSum <= singlePageBodyBudget + 6) {
+        let bestOuter = minOuterRowPx;
+        for (
+          let cand = preferredOuter;
+          cand >= minOuterRowPx;
+          cand = Math.round((cand - 0.5) * 10) / 10
+        ) {
+          const totalPx = allEntries.reduce(
+            (sum, e) => sum + getRowRequiredOuterPx(e.row, cand),
+            0,
+          );
+          if (totalPx <= singlePageBodyBudget) {
+            bestOuter = cand;
+            break;
+          }
+        }
+        return [
+          {
+            pageIndex: 0,
+            isFirst: true,
+            isLast: true,
+            rows: allEntries,
+            effectiveOuterRowPx: bestOuter,
+            cellInnerPx: Math.max(19, Math.floor(bestOuter - 1)),
+            fillerCount: 0,
+          },
+        ];
+      }
     }
 
-    // Multi-Page Exact A4 Split (each sheet maintains strict A4 ratio + 50px / ~13mm bottom margin)
-    // In Portrait multi-page (e.g. 26~40 rows), 30px outer fits all 25 rows (25 × 30 = 750 <= 756) on Page 1!
-    const multiOuterRowPx =
+    // 2. Multi-Page Mode: pack non-last pages completely full with actual item rows (품목) down to 13mm margin
+    const multiBaseOuterPx =
       orientation === "landscape"
-        ? Math.max(22, Math.min(rowHeightPx, 24))
-        : Math.max(27, Math.min(rowHeightPx, 29));
+        ? rowHeightPx <= 24
+          ? Math.max(21, rowHeightPx)
+          : rowHeightPx >= 36
+            ? Math.min(rowHeightPx, 30)
+            : 24
+        : rowHeightPx <= 28
+          ? Math.max(26, rowHeightPx)
+          : rowHeightPx >= 36
+            ? Math.min(rowHeightPx, 36)
+            : 28;
 
     const pages: {
       pageIndex: number;
       isFirst: boolean;
       isLast: boolean;
-      rows: typeof rowEntries;
+      rows: typeof allEntries;
       effectiveOuterRowPx: number;
       cellInnerPx: number;
       fillerCount: number;
@@ -2446,64 +2531,102 @@ export default function OrderPage() {
     let cursor = 0;
     let pageIdx = 0;
 
-    while (cursor < rowEntries.length) {
+    while (cursor < allEntries.length) {
       const isFirst = pageIdx === 0;
-      const remainingEntries = rowEntries.slice(cursor);
-      const remainingWeight = remainingEntries.reduce(
-        (acc, r) => acc + r.weight,
-        0,
-      );
+      const remainingEntries = allEntries.slice(cursor);
 
-      if (!isFirst && remainingWeight * multiOuterRowPx <= lastPageBodyBudget) {
-        const usedPx = remainingWeight * multiOuterRowPx;
-        const fillerCount = Math.max(
+      // Check if all remaining items fit on this continuation page as the final sheet (with 합계 + 배송메모)
+      if (!isFirst) {
+        const minRemPx = remainingEntries.reduce(
+          (sum, e) => sum + getRowRequiredOuterPx(e.row, minOuterRowPx),
           0,
-          Math.floor((lastPageBodyBudget - usedPx) / multiOuterRowPx),
         );
-        pages.push({
-          pageIndex: pageIdx,
-          isFirst: false,
-          isLast: true,
-          rows: remainingEntries,
-          effectiveOuterRowPx: multiOuterRowPx,
-          cellInnerPx: Math.max(20, multiOuterRowPx - 1),
-          fillerCount,
-        });
-        cursor = rowEntries.length;
-        break;
-      }
-
-      const pageBudget = isFirst ? firstPageBodyBudget : midPageBodyBudget;
-      const rowCountCap = isFirst ? maxFirstPageRows : 40;
-      const maxExclusive = Math.min(cursor + rowCountCap, rowEntries.length);
-
-      let usedWeight = 0;
-      let end = cursor;
-      while (end < maxExclusive) {
-        const nextW = rowEntries[end].weight;
-        if (end > cursor && (usedWeight + nextW) * multiOuterRowPx > pageBudget) {
+        if (minRemPx <= lastPageFitBudget) {
+          let lastOuter = minOuterRowPx;
+          for (
+            let cand = multiBaseOuterPx;
+            cand >= minOuterRowPx;
+            cand = Math.round((cand - 0.5) * 10) / 10
+          ) {
+            const candPx = remainingEntries.reduce(
+              (sum, e) => sum + getRowRequiredOuterPx(e.row, cand),
+              0,
+            );
+            if (candPx <= lastPageFitBudget) {
+              lastOuter = cand;
+              break;
+            }
+          }
+          const usedPx = remainingEntries.reduce(
+            (sum, e) => sum + getRowRequiredOuterPx(e.row, lastOuter),
+            0,
+          );
+          const fillerCount = Math.max(
+            0,
+            Math.floor((lastPageFillerBudget - usedPx) / lastOuter),
+          );
+          pages.push({
+            pageIndex: pageIdx,
+            isFirst: false,
+            isLast: true,
+            rows: remainingEntries,
+            effectiveOuterRowPx: lastOuter,
+            cellInnerPx: Math.max(19, Math.floor(lastOuter - 1)),
+            fillerCount,
+          });
+          cursor = allEntries.length;
           break;
         }
-        usedWeight += nextW;
+      }
+
+      // Non-last page (Page 1 or intermediate sheet): fill full budget with actual items, leaving >= 1 item for next sheet
+      const pageBudget = isFirst ? firstPageBodyBudget : midPageBodyBudget;
+      const maxExclusive = Math.max(cursor + 1, allEntries.length - 1);
+
+      let usedPx = 0;
+      let end = cursor;
+      while (end < maxExclusive) {
+        const rowPx = getRowRequiredOuterPx(
+          allEntries[end].row,
+          multiBaseOuterPx,
+        );
+        if (end > cursor && usedPx + rowPx > pageBudget) {
+          break;
+        }
+        usedPx += rowPx;
         end += 1;
       }
       if (end === cursor) {
-        end = cursor + 1;
+        end = Math.min(allEntries.length, cursor + 1);
+        usedPx = getRowRequiredOuterPx(
+          allEntries[cursor].row,
+          multiBaseOuterPx,
+        );
       }
 
-      const usedPx = usedWeight * multiOuterRowPx;
+      const pageRows = allEntries.slice(cursor, end);
+      const leftoverPx = Math.max(0, pageBudget - usedPx);
+      const extraPerRow = leftoverPx / Math.max(1, pageRows.length);
+      const stretchedOuter =
+        extraPerRow > 0 && extraPerRow <= 5
+          ? Math.floor((multiBaseOuterPx + extraPerRow) * 10) / 10
+          : multiBaseOuterPx;
+      const stretchedUsedPx = pageRows.reduce(
+        (sum, e) => sum + getRowRequiredOuterPx(e.row, stretchedOuter),
+        0,
+      );
       const fillerCount = Math.max(
         0,
-        Math.floor((pageBudget - usedPx) / multiOuterRowPx),
+        Math.floor((pageBudget - stretchedUsedPx) / stretchedOuter),
       );
 
       pages.push({
         pageIndex: pageIdx,
         isFirst,
         isLast: false,
-        rows: rowEntries.slice(cursor, end),
-        effectiveOuterRowPx: multiOuterRowPx,
-        cellInnerPx: Math.max(20, multiOuterRowPx - 1),
+        rows: pageRows,
+        effectiveOuterRowPx: stretchedOuter,
+        cellInnerPx: Math.max(19, Math.floor(stretchedOuter - 1)),
         fillerCount,
       });
       cursor = end;
@@ -5767,23 +5890,24 @@ export default function OrderPage() {
 
                             {/* 3. Section Heading & Exact A4 Line-Items Table */}
                             <div
-                              className={
+                              className={`${
                                 page.isFirst
                                   ? orientation === "landscape"
                                     ? "mt-[18px]"
                                     : "mt-6"
                                   : "mt-0"
-                              }
+                              } ${!page.isLast ? "flex-1 flex flex-col min-h-0" : ""}`}
                             >
                               {page.isFirst && (
-                                <div className="flex items-center justify-between px-0.5 mb-1">
+                                <div className="flex items-center justify-between px-0.5 mb-1 shrink-0">
                                   <div className="text-[11px] font-black text-slate-900 flex items-center gap-2 leading-none">
                                     <span>
                                       ■ 발주 품목 명세 (ITEM SPECIFICATION)
                                     </span>
                                     <span className="text-[9.5px] font-bold text-slate-500 no-print">
-                                      (총 {items.length}행 · 1장 최대{" "}
-                                      {pageRowCapacity}행)
+                                      {a4Pages.length > 1
+                                        ? `(총 ${items.length}행 · 1페이지 ${page.rows.length}행 / 총 ${a4Pages.length}장)`
+                                        : `(총 ${items.length}행 · 1장 최대 ${pageRowCapacity}행)`}
                                     </span>
                                   </div>
                                   <span className="text-[9.5px] font-semibold text-slate-500 leading-none no-print">
@@ -5798,7 +5922,9 @@ export default function OrderPage() {
                                 style={{
                                   width: `${colWidths.reduce((a, b) => a + b, 0)}px`,
                                 }}
-                                className="table-fixed border-collapse border border-slate-400 border-t-2 border-t-slate-800 text-xs"
+                                className={`table-fixed border-collapse border border-slate-400 border-t-2 border-t-slate-800 text-xs ${
+                                  !page.isLast ? "flex-1 h-full" : ""
+                                }`}
                               >
                                 <colgroup>
                                   {colWidths.map((w, cIdx) => (
@@ -5932,7 +6058,7 @@ export default function OrderPage() {
                                                 ? "코드번호·품명은 원본 데이터 연동으로 직접 수정할 수 없습니다. 클릭하면 다른 공식 부품으로 교체할 수 있습니다."
                                                 : "클릭하여 공식 카탈로그 부품을 선택하세요"
                                             }
-                                            className={`w-full px-1.5 ${
+                                            className={`w-full h-full px-1.5 ${
                                               pageCellInnerPx <= 26
                                                 ? "py-0"
                                                 : "py-0.5"
@@ -6235,7 +6361,11 @@ export default function OrderPage() {
                               </div>
 
                               <div
-                                className="flex-1 min-h-[58px] flex flex-col mt-0"
+                                className={`flex-1 ${
+                                  orientation === "landscape"
+                                    ? "min-h-[46px]"
+                                    : "min-h-[58px]"
+                                } flex flex-col mt-0`}
                               >
                                 <table
                                   style={{
