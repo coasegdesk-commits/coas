@@ -2388,8 +2388,8 @@ export default function OrderPage() {
     const minOuterRowPx = orientation === "landscape" ? 22 : 27;
 
     // Exact tbody outer pixel budgets AFTER reserving top chrome (including 15mm top margin in portrait), footer chrome, and 50px (~13.2mm) bottom margin
-    const singlePageBodyBudget = orientation === "landscape" ? 445 : 680;
-    const firstPageBodyBudget = orientation === "landscape" ? 488 : 735;
+    const singlePageBodyBudget = orientation === "landscape" ? 445 : 720;
+    const firstPageBodyBudget = orientation === "landscape" ? 488 : 770;
     const midPageBodyBudget = orientation === "landscape" ? 625 : 936;
     const lastPageBodyBudget = orientation === "landscape" ? 568 : 856;
 
@@ -2399,11 +2399,9 @@ export default function OrderPage() {
         ? Math.max(minOuterRowPx, rowHeightPx - 4)
         : minOuterRowPx;
 
-    // 1-Page Exact Fit (15~25 rows in Portrait, 15~20 rows in Landscape)
-    if (
-      rowEntries.length <= maxFirstPageRows &&
-      totalWeight * singleMinOuterPx <= singlePageBodyBudget
-    ) {
+    // 1-Page Exact Fit (10~25 rows in Portrait, 10~20 rows in Landscape)
+    // Whenever row count is within 1-page max (portrait 25, landscape 20), always keep strictly on 1 single page!
+    if (rowEntries.length <= maxFirstPageRows) {
       const maxFitOuterPx = Math.floor(
         singlePageBodyBudget / Math.max(1, totalWeight),
       );
@@ -2477,12 +2475,7 @@ export default function OrderPage() {
 
       const pageBudget = isFirst ? firstPageBodyBudget : midPageBodyBudget;
       const rowCountCap = isFirst ? maxFirstPageRows : 40;
-      const maxExclusive = isFirst
-        ? Math.min(
-            cursor + rowCountCap,
-            Math.max(cursor + 1, rowEntries.length - 1),
-          )
-        : Math.min(cursor + rowCountCap, rowEntries.length);
+      const maxExclusive = Math.min(cursor + rowCountCap, rowEntries.length);
 
       let usedWeight = 0;
       let end = cursor;
@@ -2498,6 +2491,12 @@ export default function OrderPage() {
         end = cursor + 1;
       }
 
+      const usedPx = usedWeight * multiOuterRowPx;
+      const fillerCount = Math.max(
+        0,
+        Math.floor((pageBudget - usedPx) / multiOuterRowPx),
+      );
+
       pages.push({
         pageIndex: pageIdx,
         isFirst,
@@ -2505,7 +2504,7 @@ export default function OrderPage() {
         rows: rowEntries.slice(cursor, end),
         effectiveOuterRowPx: multiOuterRowPx,
         cellInnerPx: Math.max(20, multiOuterRowPx - 1),
-        fillerCount: 0,
+        fillerCount,
       });
       cursor = end;
       pageIdx += 1;
@@ -6124,14 +6123,17 @@ export default function OrderPage() {
                                     );
                                   })}
 
-                                  {/* Ruled Blank Form Rows on Multi-Page Last Sheet to Preserve Full A4 Proportions (Matching Page 1 Styling) */}
+                                  {/* Ruled Blank Form Rows to Fill A4 Proportions down to Bottom Margin */}
                                   {page.fillerCount > 0 &&
                                     Array.from({
                                       length: page.fillerCount,
                                     }).map((_, fIdx) => (
                                       <tr
                                         key={`filler-${page.pageIndex}-${fIdx}`}
-                                        style={{ height: `${pageOuterRowPx}px` }}
+                                        style={{
+                                          height: `${pageOuterRowPx}px`,
+                                          minHeight: `${pageOuterRowPx}px`,
+                                        }}
                                         className="bg-white select-none pointer-events-none"
                                       >
                                         <td className="bg-slate-100 border border-slate-400 text-center text-[10px] text-slate-300" />
@@ -6174,18 +6176,7 @@ export default function OrderPage() {
                                       </td>
                                       <td className="border border-slate-400 no-print" />
                                     </tr>
-                                  ) : (
-                                    <tr className="bg-slate-100 text-slate-600 font-bold h-[25px]">
-                                      <td
-                                        colSpan={8}
-                                        className="border border-slate-400 px-3 text-right text-[10px]"
-                                      >
-                                        ▼ 다음 A4 페이지에 계속 이어집니다 (
-                                        {page.pageIndex + 1} / {a4Pages.length}{" "}
-                                        페이지 · 전체 {items.length}행)
-                                      </td>
-                                    </tr>
-                                  )}
+                                  ) : null}
                                 </tbody>
                               </table>
                             </div>
