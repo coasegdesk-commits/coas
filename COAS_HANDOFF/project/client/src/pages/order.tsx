@@ -3328,9 +3328,6 @@ export default function OrderPage() {
         }
       `}</style>
 
-      {/* Fixed Top Header Dark Backdrop (56px = h-14) so main navbar is always dark and crisp */}
-      <div className="fixed top-0 left-0 right-0 h-14 bg-slate-900 border-b border-slate-800 z-50 no-print pointer-events-none" />
-
       {/* =====================================================================
           FIXED TOP SUB-HEADER CONTROL BAR (1-Row Full-Width Ribbon under Header)
           • Compact Zoom (- / % / + / Fit) + Orientation + Row Adjuster (min 15) + Layout Popover
