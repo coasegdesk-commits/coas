@@ -30,6 +30,7 @@ import { CatalogRequestDialog } from "@/components/catalog-request-dialog";
 import { ECatalogViewerModal } from "@/components/ecatalog-viewer-modal";
 import { SearchModal } from "@/components/search-modal";
 import { BuyerAuthModal } from "@/components/order/BuyerAuthModal";
+import { ManualDownloadDropdown } from "@/components/ManualDownloadDropdown";
 import { resolveAssetUrl, useCmsBootstrap } from "@/lib/cms";
 import { useOrderDraftSummary } from "@/lib/order-draft";
 import { useBuyerAuth } from "@/lib/order-auth";
@@ -196,9 +197,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 isDarkHeader={isDarkHeader || isScrolled}
                 onClick={() => setEcatalogOpen(true)}
               />
-              <CatalogButton
+              <ManualDownloadDropdown
                 isDarkHeader={isDarkHeader || isScrolled}
-                onClick={() => setDialogOpen(true)}
+                onRequestCatalog={() => setDialogOpen(true)}
+                onOpenECatalog={() => setEcatalogOpen(true)}
               />
 
               {/* B2B Partner Login Button / Status Badge */}

@@ -267,11 +267,29 @@ export interface MediaItem {
   createdAt: string;
 }
 
+export interface UserManualItem {
+  id: string;
+  title: string;
+  category: string;
+  description: string;
+  version?: string;
+  fileUrl: string;
+  fileName: string;
+  fileSize: number;
+  fileExt: string;
+  downloadCount: number;
+  visible: boolean;
+  order: number;
+  uploadedAt: string;
+  updatedAt?: string;
+}
+
 export interface CmsBootstrapPayload {
   design: SiteDesignSettings;
   newProducts: NewProductItem[];
   partsSections: PartsSection[];
   sidebarFilters: SidebarFilterCategory[];
+  manuals?: UserManualItem[];
 }
 
 export interface CmsStoreData {
@@ -286,6 +304,7 @@ export interface CmsStoreData {
   inquiries: InquiryRecord[];
   orders: OrderRecord[];
   media: MediaItem[];
+  manuals?: UserManualItem[];
 }
 
 export type DoorMaterialType = "wood" | "glass";

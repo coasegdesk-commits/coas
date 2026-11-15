@@ -30,6 +30,7 @@ import { AdminRecommendationsTab } from "@/components/admin/admin-recommendation
 import { AdminB2BAccountsTab } from "@/components/admin/admin-b2b-accounts-tab";
 import { AdminDispatchTab } from "@/components/admin/admin-dispatch-tab";
 import { AdminRevenueStatsTab } from "@/components/admin/admin-revenue-stats-tab";
+import { AdminManualsTab } from "@/components/admin/admin-manuals-tab";
 import type {
   CatalogRequestRecord,
   CmsProduct,
@@ -83,6 +84,7 @@ type AdminTabId =
   | "overview"
   | "dispatch"
   | "revenue-stats"
+  | "manuals"
   | "b2b-accounts"
   | "submissions"
   | "recommendations"
@@ -392,6 +394,7 @@ export default function AdminPage() {
     { id: "overview", label: "대시보드 요약", icon: LayoutDashboard },
     { id: "dispatch", label: "일일 출고장 · 배송 관리", icon: Truck },
     { id: "revenue-stats", label: "매출 통계 · 경영 분석", icon: BarChart3 },
+    { id: "manuals", label: "사용설명서 · 시공가이드", icon: BookOpen },
     {
       id: "b2b-accounts",
       label: "거래처 · 번호인증 관리",
@@ -811,6 +814,10 @@ export default function AdminPage() {
 
           {activeTab === "revenue-stats" && (
             <AdminRevenueStatsTab />
+          )}
+
+          {activeTab === "manuals" && (
+            <AdminManualsTab />
           )}
 
           {activeTab === "b2b-accounts" && (

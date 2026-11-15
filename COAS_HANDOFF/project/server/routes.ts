@@ -14,6 +14,7 @@ import {
 } from "./egdesk-sync";
 import { partAffinityStore } from "./part-affinity";
 import { b2bStore } from "./b2b-store";
+import { manualsStore } from "./manuals-store";
 import {
   getDailyDispatchSummary,
   getAccountRevenueBreakdown,
@@ -976,6 +977,74 @@ export async function registerRoutes(
       res
         .status(500)
         .json({ error: err.message || "Failed to load revenue stats" });
+    }
+  });
+
+  // --- User Manuals & Installation Guides ---
+  app.get("/api/manuals", async (_req, res) => {
+    try {
+      res.json({ manuals: manualsStore.list(false) });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Failed to load manuals" });
+    }
+  });
+
+  app.get("/api/admin/manuals", requireAdmin, async (_req, res) => {
+    try {
+      res.json({ manuals: manualsStore.list(true) });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Failed to load admin manuals" });
+    }
+  });
+
+  app.post("/api/admin/manuals", requireAdmin, async (req, res) => {
+    try {
+      const item = req.body;
+      if (!item || !item.title || !item.fileUrl) {
+        return res.status(400).json({ error: "제목과 파일 URL이 필요합니다." });
+      }
+      const saved = manualsStore.upsert(item);
+      res.json({ success: true, manual: saved });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Failed to save manual" });
+    }
+  });
+
+  app.delete("/api/admin/manuals/:id", requireAdmin, async (req, res) => {
+    try {
+      const ok = manualsStore.delete(req.params.id);
+      res.json({ success: ok });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Failed to delete manual" });
+    }
+  });
+
+  app.post("/api/manuals/:id/download", async (req, res) => {
+    try {
+      const count = manualsStore.incrementDownload(req.params.id);
+      res.json({ success: true, count });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Failed to increment download" });
+    }
+  });
+
+  app.post("/api/admin/manuals/upload", requireAdmin, async (req, res) => {
+    try {
+      const uploaded = await streamUploadToDisk(
+        req,
+        "manuals",
+        ADMIN_ALLOWED_EXTS,
+        100 * 1024 * 1024,
+      );
+      res.json({
+        success: true,
+        fileUrl: uploaded.url,
+        fileName: uploaded.originalName,
+        fileSize: uploaded.size,
+        mimeType: uploaded.mimeType,
+      });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
     }
   });
 
