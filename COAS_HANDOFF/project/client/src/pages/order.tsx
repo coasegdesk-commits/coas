@@ -3336,7 +3336,7 @@ export default function OrderPage() {
       {!submittedOrderNumber && (
         <div
           data-testid="external-a4-control-bar"
-          className="fixed top-14 left-0 right-0 h-11 z-50 bg-slate-800/95 backdrop-blur-md text-white border-b border-slate-700 shadow-md px-3 flex items-center justify-center no-print"
+          className="fixed top-14 left-0 right-0 h-11 z-30 bg-slate-800/95 backdrop-blur-md text-white border-b border-slate-700 shadow-md px-3 flex items-center justify-center no-print"
         >
           <div className="flex items-center gap-1.5 whitespace-nowrap overflow-x-auto max-w-full py-1">
             <span className="px-2 py-0.5 rounded bg-[#FF7B00] text-white text-[11px] font-bold shrink-0">
@@ -3521,7 +3521,7 @@ export default function OrderPage() {
                     ? `${Math.max(12, Math.min(window.innerWidth - 482, layoutTriggerRef.current.getBoundingClientRect().left))}px`
                     : "50%",
                 }}
-                className="fixed top-[104px] z-50 w-[470px] max-w-[95vw] p-3.5 bg-white text-slate-900 border border-slate-300 shadow-2xl rounded-lg space-y-3 whitespace-normal"
+                className="fixed top-[104px] z-40 w-[470px] max-w-[95vw] p-3.5 bg-white text-slate-900 border border-slate-300 shadow-2xl rounded-lg space-y-3 whitespace-normal"
               >
                 {/* Quick Actions: Print & Excel CSV */}
                 <div className="space-y-1.5 pb-2.5 border-b border-slate-200">
@@ -4866,7 +4866,7 @@ export default function OrderPage() {
           }}
           onMouseLeave={handleHoverZoomLeave}
           style={{ width: "600px", height: "610px" }}
-          className={`fixed top-[104px] z-50 w-[600px] h-[610px] max-w-[95vw] bg-white rounded-xl border-2 border-[#FF7B00] shadow-2xl flex flex-col overflow-hidden no-print transition-all duration-200 ${
+          className={`fixed top-[104px] z-40 w-[600px] h-[610px] max-w-[95vw] bg-white rounded-xl border-2 border-[#FF7B00] shadow-2xl flex flex-col overflow-hidden no-print transition-all duration-200 ${
             drawerOpen
               ? recPopupVisible
                 ? "left-4 lg:left-[min(834px,calc(100vw-616px))]"
