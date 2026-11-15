@@ -576,7 +576,13 @@ export default function AdminPage() {
       </header>
 
       {/* Main Workspace (Full Width & Horizontal Slide Drawer with Single Center Tab) */}
-      <div className="w-full pl-2 sm:pl-3 lg:pl-3 pr-2 sm:pr-3 lg:pr-4 py-3 sm:py-4 flex-1 flex flex-col lg:flex-row gap-3.5 lg:gap-4 min-w-0 items-start">
+      <div
+        className={`w-full pr-2 sm:pr-3 lg:pr-4 py-3 sm:py-4 flex-1 flex flex-col lg:flex-row min-w-0 items-start transition-all duration-300 ${
+          isSidebarOpen
+            ? "pl-2 sm:pl-3 lg:pl-3 gap-3.5 lg:gap-4"
+            : "pl-0 gap-0"
+        }`}
+      >
         {/* Left Navigation Sidebar Wrapper (Horizontal Slide Drawer) */}
         <div className="relative shrink-0 flex items-center select-none z-20 self-start">
           {/* Collapsible Sidebar Body (좌측에서 우측으로 수평 슬라이딩 돌출) */}
@@ -648,7 +654,7 @@ export default function AdminPage() {
             </div>
           </aside>
 
-          {/* Center Grip Tab (표시 부분만 호버 시 컬러 변경 & 수평 열기/닫기 슬라이딩 유지) */}
+          {/* Center Grip Tab (표시 부분만 호버 시 컬러 변경 & 접힘 시 좌측 여백 없이 화면 좌측 테두리에 밀착) */}
           <button
             type="button"
             onClick={toggleSidebar}
@@ -690,7 +696,11 @@ export default function AdminPage() {
         </div>
 
         {/* Right Content Area */}
-        <main className="flex-1 min-w-0">
+        <main
+          className={`flex-1 min-w-0 transition-all duration-300 ${
+            isSidebarOpen ? "" : "pl-1 sm:pl-1.5 lg:pl-2"
+          }`}
+        >
           {activeTab === "overview" && (
             <div className="space-y-6">
               {/* Summary Metrics */}
