@@ -27,6 +27,7 @@ import { AdminPartsTab } from "@/components/admin/admin-parts-tab";
 import { AdminECatalogTab } from "@/components/admin/admin-ecatalog-tab";
 import { AdminSubmissionsTab } from "@/components/admin/admin-submissions-tab";
 import { AdminRecommendationsTab } from "@/components/admin/admin-recommendations-tab";
+import { AdminB2BAccountsTab } from "@/components/admin/admin-b2b-accounts-tab";
 import type {
   CatalogRequestRecord,
   CmsProduct,
@@ -56,6 +57,7 @@ import {
   Loader2,
   ArrowRight,
   ShieldCheck,
+  Building2,
 } from "lucide-react";
 
 interface AdminOverviewData {
@@ -80,7 +82,8 @@ type AdminTabId =
   | "parts"
   | "recommendations"
   | "ecatalog"
-  | "submissions";
+  | "submissions"
+  | "b2b-accounts";
 
 export default function AdminPage() {
   const { toast } = useToast();
@@ -394,6 +397,11 @@ export default function AdminPage() {
       label: "발주서 · 문의 · 신청 내역",
       icon: ClipboardList,
       badge: totalUnread,
+    },
+    {
+      id: "b2b-accounts",
+      label: "거래처 · 번호인증 관리",
+      icon: Building2,
     },
   ];
 
@@ -790,6 +798,10 @@ export default function AdminPage() {
               learnedOrderIds={data.affinity?.learnedOrderIds || []}
               onSaved={loadOverview}
             />
+          )}
+
+          {activeTab === "b2b-accounts" && (
+            <AdminB2BAccountsTab />
           )}
         </main>
       </div>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,7 @@ import {
   Truck,
   RotateCcw,
   Check,
+  UserCheck,
 } from "lucide-react";
 import {
   type BuyerSession,
@@ -24,6 +25,7 @@ import {
   findBuyerByPhone,
 } from "@/lib/order-auth";
 import { useToast } from "@/hooks/use-toast";
+import type { B2BCompanyProfile } from "@shared/cms-types";
 
 interface BuyerAuthModalProps {
   isOpen: boolean;
@@ -45,12 +47,62 @@ export function BuyerAuthModal({
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState("1234");
   const [rememberMe, setRememberMe] = useState(true);
+  const [remoteCompanies, setRemoteCompanies] = useState<B2BCompanyProfile[]>([]);
+
+  // Load B2B companies from server & EGDesk My DB
+  useEffect(() => {
+    if (isOpen) {
+      fetch("/api/b2b/companies")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && Array.isArray(data.companies)) {
+            setRemoteCompanies(data.companies);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isOpen]);
 
   // Full Phone computed from 010 + suffix
   const fullPhone = phoneSuffix.trim() ? `010-${phoneSuffix.trim()}` : "";
 
-  // Auto-detect registered buyer when phone changes
-  const matchedBuyer = findBuyerByPhone(fullPhone);
+  // Audit Log Helper
+  const sendAuthAuditLog = (session: BuyerSession, method: string) => {
+    fetch("/api/auth/log", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        companyName: session.companyName,
+        contactName: session.contactName,
+        phone: session.phone,
+        loginMethod: method,
+        status: "success",
+      }),
+    }).catch(() => {});
+  };
+
+  // Find matching staff contact in registered B2B companies
+  const matchedRemote = (() => {
+    const clean = fullPhone.replace(/[^0-9]/g, "");
+    if (!clean || clean.length < 8) return null;
+    for (const comp of remoteCompanies) {
+      for (const staff of comp.staffContacts) {
+        if (staff.phone.replace(/[^0-9]/g, "") === clean) {
+          return { company: comp, staff };
+        }
+      }
+    }
+    return null;
+  })();
+
+  // Fallback to static preset buyer if not in remote companies
+  const matchedBuyer = matchedRemote
+    ? {
+        companyName: matchedRemote.company.companyName,
+        contactName: `${matchedRemote.staff.name} (${matchedRemote.staff.role || "담당자"})`,
+        phone: matchedRemote.staff.phone,
+      }
+    : findBuyerByPhone(fullPhone);
 
   // Smart Phone Input Handler:
   // 1) 010 타이핑 안 하고 뒷번호만 입력해도 자동 처리
@@ -80,12 +132,30 @@ export function BuyerAuthModal({
 
     setPhoneSuffix(formatted);
 
-    // 등록된 거래처 자동 감지
+    // 등록된 거래처 자동 감지 (원격 다중 담당자 우선 -> 정적 프리셋 보조)
     const computedFull = formatted ? `010-${formatted}` : "";
-    const found = findBuyerByPhone(computedFull);
-    if (found) {
-      setCompanyName(found.companyName);
-      setContactName(found.contactName);
+    const clean = computedFull.replace(/[^0-9]/g, "");
+
+    let foundRemote: { company: B2BCompanyProfile; staff: any } | null = null;
+    for (const comp of remoteCompanies) {
+      for (const staff of comp.staffContacts) {
+        if (staff.phone.replace(/[^0-9]/g, "") === clean) {
+          foundRemote = { company: comp, staff };
+          break;
+        }
+      }
+      if (foundRemote) break;
+    }
+
+    if (foundRemote) {
+      setCompanyName(foundRemote.company.companyName);
+      setContactName(`${foundRemote.staff.name} (${foundRemote.staff.role || "담당자"})`);
+    } else {
+      const found = findBuyerByPhone(computedFull);
+      if (found) {
+        setCompanyName(found.companyName);
+        setContactName(found.contactName);
+      }
     }
   };
 
@@ -99,6 +169,7 @@ export function BuyerAuthModal({
       loggedInAt: new Date().toISOString(),
     };
     setBuyerSession(session);
+    sendAuthAuditLog(session, "social_kakao");
     toast({
       title: "카카오 1초 로그인 완료",
       description: `[${session.companyName} - ${session.contactName}] 님 환영합니다. 과거 발주 이력과 기본 배송지가 자동 연동되었습니다.`,
@@ -142,28 +213,45 @@ export function BuyerAuthModal({
       return;
     }
 
-    const matched = findBuyerByPhone(fullPhone);
-    const session: BuyerSession = matched
-      ? {
-          ...matched,
-          isAuthenticated: true,
-          loginMethod: "biz_phone",
-          loggedInAt: new Date().toISOString(),
-        }
-      : {
-          isAuthenticated: true,
-          companyName: companyName.trim() || "신규 거래처",
-          bizNumber: "123-45-67890",
-          contactName: contactName.trim() || "담당자",
-          phone: fullPhone,
-          email: "order@" + (companyName.replace(/[^a-zA-Z0-9]/g, "") || "buyer") + ".com",
-          deliveryAddress: "서울/수도권 현장 직송 배송지",
-          shippingMethod: "화물",
-          loginMethod: "biz_phone",
-          loggedInAt: new Date().toISOString(),
-        };
+    let session: BuyerSession;
+    if (matchedRemote) {
+      session = {
+        isAuthenticated: true,
+        companyName: matchedRemote.company.companyName,
+        bizNumber: matchedRemote.company.bizNumber,
+        contactName: `${matchedRemote.staff.name} (${matchedRemote.staff.role || "담당자"})`,
+        phone: fullPhone,
+        email: "order@" + (matchedRemote.company.companyName.replace(/[^a-zA-Z0-9]/g, "") || "buyer") + ".com",
+        deliveryAddress: matchedRemote.company.deliveryAddress,
+        shippingMethod: (matchedRemote.company.shippingMethod as any) || "화물",
+        loginMethod: "biz_phone",
+        loggedInAt: new Date().toISOString(),
+      };
+    } else {
+      const matched = findBuyerByPhone(fullPhone);
+      session = matched
+        ? {
+            ...matched,
+            isAuthenticated: true,
+            loginMethod: "biz_phone",
+            loggedInAt: new Date().toISOString(),
+          }
+        : {
+            isAuthenticated: true,
+            companyName: companyName.trim() || "신규 거래처",
+            bizNumber: "123-45-67890",
+            contactName: contactName.trim() || "담당자",
+            phone: fullPhone,
+            email: "order@" + (companyName.replace(/[^a-zA-Z0-9]/g, "") || "buyer") + ".com",
+            deliveryAddress: "서울/수도권 현장 직송 배송지",
+            shippingMethod: "화물",
+            loginMethod: "biz_phone",
+            loggedInAt: new Date().toISOString(),
+          };
+    }
 
     setBuyerSession(session);
+    sendAuthAuditLog(session, "biz_phone");
     toast({
       title: "거래처 로그인 완료",
       description: `[${session.companyName}] 님 환영합니다. 비밀번호 없이 안전하게 발주서를 작성하실 수 있습니다.`,
@@ -186,9 +274,11 @@ export function BuyerAuthModal({
     const session: BuyerSession = {
       ...preset,
       isAuthenticated: true,
+      loginMethod: preset.loginMethod || "biz_phone",
       loggedInAt: new Date().toISOString(),
     };
     setBuyerSession(session);
+    sendAuthAuditLog(session, "preset_quick");
     toast({
       title: "거래처 전환 완료",
       description: `[${session.companyName}] 님으로 로그인되었습니다.`,
@@ -265,7 +355,12 @@ export function BuyerAuthModal({
                 {matchedBuyer && (
                   <span className="text-[11px] font-extrabold text-[#FF7B00] flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    등록 거래처: {matchedBuyer.companyName}
+                    <span className="truncate max-w-[240px]">
+                      등록 거래처: {matchedBuyer.companyName}
+                      {matchedRemote?.staff?.name
+                        ? ` (${matchedRemote.staff.name}${matchedRemote.staff.role ? ` ${matchedRemote.staff.role}` : ""})`
+                        : ""}
+                    </span>
                   </span>
                 )}
               </div>

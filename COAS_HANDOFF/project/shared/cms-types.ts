@@ -246,3 +246,34 @@ export interface PartAffinitySnapshot {
   learnedOrderIds: string[];
   records: PartAffinityRecord[];
 }
+
+export interface B2BStaffContact {
+  id: string;
+  name: string;
+  phone: string;
+  role?: string;
+  isPrimary?: boolean;
+  createdAt: string;
+}
+
+export interface B2BCompanyProfile {
+  id: string;
+  companyName: string;
+  bizNumber: string;
+  deliveryAddress: string;
+  shippingMethod: "화물" | "택배" | "방문수령";
+  memo?: string;
+  staffContacts: B2BStaffContact[];
+  useCount?: number;
+  updatedAt: string;
+}
+
+export interface B2BAuthLog {
+  id: string;
+  companyName: string;
+  contactName: string;
+  phone: string;
+  loginMethod: string;
+  status: "success" | "fail";
+  loggedAt: string;
+}

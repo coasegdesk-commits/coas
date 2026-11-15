@@ -86,7 +86,7 @@ function loadEgdeskConfig(): EgdeskConnectionConfig | null {
   return { apiUrl, apiKey, projectId, env };
 }
 
-async function callEgdeskUserDataTool(
+export async function callEgdeskUserDataTool(
   toolName: string,
   args: Record<string, any> = {},
 ): Promise<any> {
@@ -210,6 +210,26 @@ export async function ensureCoasTables(): Promise<boolean> {
             { name: "pinned", type: "INTEGER", defaultValue: 0 },
             { name: "excluded", type: "INTEGER", defaultValue: 0 },
             { name: "updated_at", type: "TEXT", notNull: true },
+          ],
+        });
+      }
+
+      const EGDESK_AUTH_LOGS_TABLE = "coas_auth_logs";
+      if (!existing.has(EGDESK_AUTH_LOGS_TABLE)) {
+        await callEgdeskUserDataTool("user_data_create_table", {
+          tableName: EGDESK_AUTH_LOGS_TABLE,
+          displayName: "COAS 거래처 인증 내역",
+          description: "거래처 담당자별 휴대폰/카카오 로그인 인증 로그",
+          uniqueKeyColumns: ["log_id"],
+          duplicateAction: "insert",
+          schema: [
+            { name: "log_id", type: "TEXT", notNull: true },
+            { name: "company_name", type: "TEXT", notNull: true },
+            { name: "contact_name", type: "TEXT", notNull: true },
+            { name: "phone", type: "TEXT", notNull: true },
+            { name: "login_method", type: "TEXT", notNull: true },
+            { name: "status", type: "TEXT", defaultValue: "success" },
+            { name: "logged_at", type: "TEXT", notNull: true },
           ],
         });
       }

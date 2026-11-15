@@ -13,6 +13,7 @@ import {
   upsertBuyerInEgdesk,
 } from "./egdesk-sync";
 import { partAffinityStore } from "./part-affinity";
+import { b2bStore } from "./b2b-store";
 
 const apiKey =
   process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
@@ -334,6 +335,93 @@ export async function registerRoutes(
 
   app.delete("/api/buyer-profiles/:id", async (req, res) => {
     const result = await deleteBuyerFromEgdesk(req.params.id);
+    res.json(result);
+  });
+
+  // --- B2B Partner Directory & Authentication Log Endpoints ---
+  app.get("/api/b2b/companies", (_req, res) => {
+    res.json(b2bStore.listCompanies());
+  });
+
+  app.get("/api/b2b/resolve-phone", (req, res) => {
+    const phone = String(req.query.phone || "");
+    const found = b2bStore.findCompanyByPhone(phone);
+    res.json(found || { matched: false });
+  });
+
+  app.post("/api/auth/log", (req, res) => {
+    const { companyName, contactName, phone, loginMethod, status } = req.body || {};
+    if (!phone) {
+      return res.status(400).json({ error: "전화번호가 필요합니다." });
+    }
+    const log = b2bStore.recordAuthLog({
+      companyName: String(companyName || "미확인 업체"),
+      contactName: String(contactName || "담당자"),
+      phone: String(phone),
+      loginMethod: String(loginMethod || "biz_phone"),
+      status: status === "fail" ? "fail" : "success",
+    });
+    res.json({ success: true, log });
+  });
+
+  app.get("/api/admin/b2b-companies", requireAdmin, (_req, res) => {
+    res.json(b2bStore.listCompanies());
+  });
+
+  app.post("/api/admin/b2b-companies", requireAdmin, (req, res) => {
+    const { companyName, bizNumber, deliveryAddress, shippingMethod, memo, staffContacts, id } = req.body || {};
+    if (!companyName || !String(companyName).trim()) {
+      return res.status(400).json({ error: "업체명을 입력해 주세요." });
+    }
+    const saved = b2bStore.upsertCompany({
+      id,
+      companyName: String(companyName),
+      bizNumber: String(bizNumber || "123-45-67890"),
+      deliveryAddress: String(deliveryAddress || ""),
+      shippingMethod,
+      memo: String(memo || ""),
+      staffContacts: Array.isArray(staffContacts) ? staffContacts : [],
+    });
+    res.json({ success: true, company: saved });
+  });
+
+  app.delete("/api/admin/b2b-companies/:id", requireAdmin, (req, res) => {
+    const deleted = b2bStore.deleteCompany(req.params.id);
+    res.json({ success: deleted });
+  });
+
+  app.post("/api/admin/b2b-companies/:id/phones", requireAdmin, (req, res) => {
+    const { name, phone, role, isPrimary } = req.body || {};
+    if (!phone || !String(phone).trim()) {
+      return res.status(400).json({ error: "전화번호를 입력해 주세요." });
+    }
+    const updated = b2bStore.addStaffPhone(req.params.id, {
+      name: String(name || "담당자"),
+      phone: String(phone),
+      role: String(role || "담당자"),
+      isPrimary: !!isPrimary,
+    });
+    if (!updated) {
+      return res.status(404).json({ error: "업체를 찾을 수 없습니다." });
+    }
+    res.json({ success: true, company: updated });
+  });
+
+  app.delete("/api/admin/b2b-companies/:id/phones/:phoneId", requireAdmin, (req, res) => {
+    const updated = b2bStore.removeStaffPhone(req.params.id, req.params.phoneId);
+    if (!updated) {
+      return res.status(404).json({ error: "업체를 찾을 수 없습니다." });
+    }
+    res.json({ success: true, company: updated });
+  });
+
+  app.get("/api/admin/auth-logs", requireAdmin, (req, res) => {
+    const limit = Math.min(Number(req.query.limit) || 100, 500);
+    res.json(b2bStore.listAuthLogs(limit));
+  });
+
+  app.post("/api/admin/b2b-sync-egdesk", requireAdmin, async (_req, res) => {
+    const result = await b2bStore.syncAllToEgdesk();
     res.json(result);
   });
 
