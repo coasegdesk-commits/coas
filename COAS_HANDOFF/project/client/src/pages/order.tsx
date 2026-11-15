@@ -6035,7 +6035,7 @@ export default function OrderPage() {
                                 style={{
                                   width: `${colWidths.reduce((a, b) => a + b, 0)}px`,
                                 }}
-                                className={`table-fixed border-collapse border border-slate-400 border-t-2 border-t-slate-800 border-b-2 border-b-slate-800 text-xs ${
+                                className={`table-fixed border-collapse border border-slate-400 border-t-2 border-t-slate-800 border-b border-b-slate-900 text-xs ${
                                   !page.isLast ? "flex-1 h-full" : ""
                                 }`}
                               >
@@ -6389,7 +6389,7 @@ export default function OrderPage() {
                                   {/* Page Bottom Summary or Continuation Row */}
                                   {page.isLast ? (
                                     <tr
-                                      className={`bg-orange-50/90 font-black border-b-2 border-b-slate-800 ${
+                                      className={`bg-orange-50/90 font-black border-b border-b-slate-900 ${
                                         orientation === "landscape"
                                           ? "h-[25px]"
                                           : "h-[28px]"
@@ -6397,7 +6397,7 @@ export default function OrderPage() {
                                     >
                                       <td
                                         colSpan={5}
-                                        className="border border-slate-400 border-b-2 border-b-slate-800 text-center text-slate-900 text-[11px]"
+                                        className="border border-slate-400 border-b border-b-slate-900 text-center text-slate-900 text-[11px]"
                                       >
                                         합 계 (입력된 품목 수 : 총{" "}
                                         <span className="text-[#FF7B00]">
@@ -6405,15 +6405,15 @@ export default function OrderPage() {
                                         </span>
                                         종)
                                       </td>
-                                      <td className="border border-slate-400 border-b-2 border-b-slate-800 px-2 text-right text-[#FF7B00] text-xs font-black">
+                                      <td className="border border-slate-400 border-b border-b-slate-900 px-2 text-right text-[#FF7B00] text-xs font-black">
                                         {summary.totalQty}
                                       </td>
                                       <td
-                                        className="border border-slate-400 border-b-2 border-b-slate-800 px-2 text-center text-[10.5px] font-extrabold text-slate-700"
+                                        className="border border-slate-400 border-b border-b-slate-900 px-2 text-center text-[10.5px] font-extrabold text-slate-700"
                                       >
                                         {summary.unitSummary}
                                       </td>
-                                      <td className="border border-slate-400 border-b-2 border-b-slate-800 no-print" />
+                                      <td className="border border-slate-400 border-b border-b-slate-900 no-print" />
                                     </tr>
                                   ) : null}
                                 </tbody>
@@ -6495,7 +6495,7 @@ export default function OrderPage() {
                                   style={{
                                     width: `${colWidths.reduce((a, b) => a + b, 0)}px`,
                                   }}
-                                  className="w-full h-full flex-1 table-fixed border-collapse border border-slate-400 border-b-2 border-b-slate-800 text-xs"
+                                  className="w-full h-full flex-1 table-fixed border-collapse border border-slate-400 border-b border-b-slate-900 text-xs"
                                 >
                                   <colgroup>
                                     <col style={{ width: "108px" }} />
@@ -6510,13 +6510,13 @@ export default function OrderPage() {
                                     />
                                   </colgroup>
                                   <tbody>
-                                    <tr className="h-full border-b-2 border-b-slate-800">
-                                      <th className="h-full bg-slate-100 text-slate-900 font-black text-center border border-slate-400 border-b-2 border-b-slate-800 leading-snug text-[11px] px-2 align-middle">
+                                    <tr className="h-full border-b border-b-slate-900">
+                                      <th className="h-full bg-slate-100 text-slate-900 font-black text-center border border-slate-400 border-b border-b-slate-900 leading-snug text-[11px] px-2 align-middle">
                                         특기사항 /
                                         <br />
                                         배송메모
                                       </th>
-                                      <td className="h-full border border-slate-400 border-b-2 border-b-slate-800 p-0 align-top">
+                                      <td className="h-full border border-slate-400 border-b border-b-slate-900 p-0 align-top">
                                         <div className="w-full h-full flex flex-col justify-between">
                                           <textarea
                                             value={memo}
