@@ -426,7 +426,7 @@ export default function AdminPage() {
 
       {/* Top Admin Header */}
       <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30">
-        <div className="max-w-[1600px] mx-auto px-4 h-16 flex items-center justify-between gap-4">
+        <div className="w-full px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="bg-[#FF7B00] p-2 rounded-lg">
               <ShieldCheck className="w-5 h-5 text-white" />
@@ -516,8 +516,8 @@ export default function AdminPage() {
         </div>
       </header>
 
-      {/* Main Workspace */}
-      <div className="max-w-[1600px] w-full mx-auto px-4 py-6 flex-1 flex flex-col lg:flex-row gap-6">
+      {/* Main Workspace (Full Width & Expanded Content) */}
+      <div className="w-full px-3 sm:px-4 lg:px-6 py-4 flex-1 flex flex-col lg:flex-row gap-4 lg:gap-5 min-w-0">
         {/* Left Navigation Sidebar */}
         <aside className="w-full lg:w-64 shrink-0">
           <nav className="bg-white rounded-xl border border-gray-200 p-2 shadow-sm flex lg:flex-col gap-1 overflow-x-auto">
