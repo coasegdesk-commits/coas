@@ -2998,7 +2998,7 @@ export default function OrderPage() {
       {!submittedOrderNumber && (
         <div
           data-testid="external-a4-control-bar"
-          className="fixed top-14 left-0 right-0 h-11 z-40 bg-slate-800/95 backdrop-blur-md text-white border-b border-slate-700 shadow-md px-3 flex items-center justify-center no-print"
+          className="fixed top-14 left-0 right-0 h-11 z-50 bg-slate-800/95 backdrop-blur-md text-white border-b border-slate-700 shadow-md px-3 flex items-center justify-center no-print"
         >
           <div className="flex items-center gap-1.5 whitespace-nowrap overflow-x-auto max-w-full py-1">
             <span className="px-2 py-0.5 rounded bg-[#FF7B00] text-white text-[11px] font-bold shrink-0">
@@ -3548,7 +3548,7 @@ export default function OrderPage() {
       {!submittedOrderNumber && (
         <aside
           ref={drawerAsideRef}
-          className={`fixed top-14 bottom-0 left-0 z-40 w-[420px] bg-white border-r-2 border-[#FF7B00] shadow-2xl flex flex-col transition-transform duration-300 ease-in-out no-print ${
+          className={`fixed top-[100px] bottom-0 left-0 z-40 w-[420px] bg-white border-r-2 border-[#FF7B00] shadow-2xl flex flex-col transition-transform duration-300 ease-in-out no-print ${
             drawerOpen ? "translate-x-0" : "-translate-x-full"
           }`}
           aria-label="부품 빠른 검색 및 원클릭 담기"
@@ -3867,7 +3867,7 @@ export default function OrderPage() {
         <div
           ref={recPopupRef}
           data-testid="popup-related-part-recommendations"
-          className="fixed top-[68px] bottom-4 left-3 lg:left-[430px] z-[45] w-[392px] max-w-[calc(100vw-24px)] bg-white rounded-xl border-2 border-[#FF7B00] shadow-2xl flex flex-col overflow-hidden no-print transition-all duration-200"
+          className="fixed top-[104px] bottom-4 left-3 lg:left-[430px] z-[45] w-[392px] max-w-[calc(100vw-24px)] bg-white rounded-xl border-2 border-[#FF7B00] shadow-2xl flex flex-col overflow-hidden no-print transition-all duration-200"
         >
           {/* Popup Header Bar */}
           <div className="px-3 py-2.5 bg-slate-900 text-white flex items-center justify-between gap-2 shrink-0">
@@ -4528,7 +4528,7 @@ export default function OrderPage() {
           }}
           onMouseLeave={handleHoverZoomLeave}
           style={{ width: "600px", height: "610px" }}
-          className={`fixed top-[68px] z-50 w-[600px] h-[610px] max-w-[95vw] bg-white rounded-xl border-2 border-[#FF7B00] shadow-2xl flex flex-col overflow-hidden no-print transition-all duration-200 ${
+          className={`fixed top-[104px] z-50 w-[600px] h-[610px] max-w-[95vw] bg-white rounded-xl border-2 border-[#FF7B00] shadow-2xl flex flex-col overflow-hidden no-print transition-all duration-200 ${
             drawerOpen
               ? recPopupVisible
                 ? "left-4 lg:left-[min(834px,calc(100vw-616px))]"

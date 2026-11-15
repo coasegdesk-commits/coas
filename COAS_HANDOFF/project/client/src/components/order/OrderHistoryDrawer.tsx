@@ -168,7 +168,7 @@ export function OrderHistoryDrawer({
     <>
       {/* Right Sliding Drawer */}
       <aside
-        className={`fixed top-14 right-0 bottom-0 z-40 w-[450px] max-w-[92vw] bg-white border-l-2 border-[#FF7B00] shadow-2xl flex flex-col transition-transform duration-300 ease-in-out no-print ${
+        className={`fixed top-[100px] right-0 bottom-0 z-40 w-[450px] max-w-[92vw] bg-white border-l-2 border-[#FF7B00] shadow-2xl flex flex-col transition-transform duration-300 ease-in-out no-print ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
         aria-label="우리 회사 주문 히스토리"
